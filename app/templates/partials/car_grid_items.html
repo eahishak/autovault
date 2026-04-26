@@ -1,0 +1,17 @@
+{#
+  Partial: app/templates/partials/car_grid_items.html
+  Rendered by /api/cars?format=html and returned as JSON {html, total}.
+  filters.js swaps this into #car-grid after each AJAX filter request.
+#}
+{% if cars %}
+{% for car in cars %}
+{% include "partials/car_card.html" %}
+{% endfor %}
+{% else %}
+<div class="empty-state" style="grid-column: 1 / -1;">
+  <div class="empty-state__icon"><i class="fa-solid fa-car-burst" aria-hidden="true"></i></div>
+  <h3 class="empty-state__title">No results found</h3>
+  <p class="empty-state__body">Try adjusting your filters or searching for a different term.</p>
+  <a href="/browse" class="btn-primary">Clear All Filters</a>
+</div>
+{% endif %}

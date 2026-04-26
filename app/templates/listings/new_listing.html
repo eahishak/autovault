@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'edit' %}Edit Listing{% else %}Post a Car{% endif %}{% endblock %}
+
+{% block body_class %}page-listing-form{% endblock %}
+
+{% block extra_css %}
+<style>
+  .listing-form-page {
+    max-width: 860px;
+    margin-inline: auto;
+    padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;
+  }
+
+  .listing-form-header {
+    margin-bottom: 2rem;
+  }
+  .listing-form-title { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; }
+  .listing-form-sub   { color: var(--text-secondary); font-size: .9rem; margin-top: .25rem; }
+
+  .form-section {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .image-preview-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .625rem;
+    margin-top: .875rem;
+  }
+  .image-preview-item {
+    width: 100px;
+    height: 72px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 2px solid var(--border);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .image-preview-item.primary { border-color: var(--brand); }
+  .image-preview-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .image-preview-item__label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,.55);
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 2px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .form-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: .5rem;
+    flex-wrap: wrap;
+  }
+
+  .progress-steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-elevated);
+  }
+  .progress-step {
+    flex: 1;
+    padding: .625rem .5rem;
+    text-align: center;
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    background: var(--bg-subtle);
+  }
+  .progress-step:last-child { border-right: none; }
+  .progress-step.done  { background: var(--success-bg); color: var(--success); }
+  .progress-step.active{ background: var(--brand-light); color: var(--brand); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="listing-form-page">
+
+  <div class="listing-form-header">
+    <nav aria-label="Breadcrumb" style="font-size:.78rem; color:var(--text-muted); margin-bottom:.75rem; display:flex; gap:.4rem; align-items:center;">
+      <a href="{{ url_for('dashboard.seller') }}" style="color:var(--text-muted); text-decoration:none;">Dashboard</a>
+      <i class="fa-solid fa-chevron-right" style="font-size:.55rem;" aria-hidden="true"></i>
+      <span>{% if mode == 'edit' %}Edit Listing{% else %}New Listing{% endif %}</span>
+    </nav>
+    <h1 class="listing-form-title">
+      {% if mode == 'edit' %}
+        Edit: {{ car.year }} {{ car.make }} {{ car.model }}
+      {% else %}
+        Post Your Car
+      {% endif %}
+    </h1>
+    <p class="listing-form-sub">Fill in as much detail as possible — listings with complete specs get more views.</p>
+  </div>
+
+  <form method="post"
+        action="{% if mode == 'edit' %}{{ url_for('listings.edit_listing', car_id=car.id) }}{% else %}{{ url_for('listings.new_listing') }}{% endif %}"
+        novalidate
+        id="listing-form">
+    {{ form.hidden_tag() }}
+
+    <!-- Section 1: Identity -->
+    <div class="form-section">
+      <h2 class="form-section-title"><i class="fa-solid fa-car" aria-hidden="true"></i> Vehicle Identity</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="make">Make <span class="required" aria-hidden="true">*</span></label>
+          <select id="make" name="make" class="form-control {% if form.make.errors %}is-invalid{% endif %}" required>
+            {% for val, label in form.make.choices %}
+            <option value="{{ val }}" {% if form.make.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.make.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.make.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="model">Model <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="model" name="model" class="form-control {% if form.model.errors %}is-invalid{% endif %}"
+            value="{{ form.model.data or '' }}" placeholder="Camry, F-150, Model 3…" required />
+          {% if form.model.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.model.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="year">Year <span class="required" aria-hidden="true">*</span></label>
+          <input type="number" id="year" name="year" class="form-control {% if form.year.errors %}is-invalid{% endif %}"
+            value="{{ form.year.data or '' }}" placeholder="2022" min="1990" max="2025" required />
+          {% if form.year.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.year.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="trim">Trim / Edition</label>
+          <input type="text" id="trim" name="trim" class="form-control" value="{{ form.trim.data or '' }}" placeholder="XLE, Sport, Premium…" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="condition">Condition <span class="required" aria-hidden="true">*</span></label>
+          <select id="condition" name="condition" class="form-control {% if form.condition.errors %}is-invalid{% endif %}" required>
+            {% for val, label in form.condition.choices %}
+            <option value="{{ val }}" {% if form.condition.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.condition.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.condition.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="vin">VIN</label>
+          <input type="text" id="vin" name="vin" class="form-control {% if form.vin.errors %}is-invalid{% endif %}"
+            value="{{ form.vin.data or '' }}" placeholder="17-character VIN" maxlength="17" />
+          {% if form.vin.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.vin.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Pricing & Mileage -->
+    <div class="form-section">
+      <h2 class="form-section-title"><i class="fa-solid fa-dollar-sign" aria-hidden="true"></i> Pricing &amp; Mileage</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="price">Asking Price ($) <span class="required" aria-hidden="true">*</span></label>
+          <input type="number" id="price" name="price" class="form-control {% if form.price.errors %}is-invalid{% endif %}"
+            value="{{ form.price.data or '' }}" placeholder="25000" min="0" step="100" required />
+          {% if form.price.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.price.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mileage">Mileage <span class="required" aria-hidden="true">*</span></label>
+          <input type="number" id="mileage" name="mileage" class="form-control {% if form.mileage.errors %}is-invalid{% endif %}"
+            value="{{ form.mileage.data or '' }}" placeholder="45000" min="0" required />
+          {% if form.mileage.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.mileage.errors[0] }}</span>{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Specs -->
+    <div class="form-section">
+      <h2 class="form-section-title"><i class="fa-solid fa-gears" aria-hidden="true"></i> Specifications</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="body_type">Body Type <span class="required" aria-hidden="true">*</span></label>
+          <select id="body_type" name="body_type" class="form-control {% if form.body_type.errors %}is-invalid{% endif %}" required>
+            {% for val, label in form.body_type.choices %}
+            <option value="{{ val }}" {% if form.body_type.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.body_type.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.body_type.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="fuel_type">Fuel Type <span class="required" aria-hidden="true">*</span></label>
+          <select id="fuel_type" name="fuel_type" class="form-control" required>
+            {% for val, label in form.fuel_type.choices %}
+            <option value="{{ val }}" {% if form.fuel_type.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="transmission">Transmission <span class="required" aria-hidden="true">*</span></label>
+          <select id="transmission" name="transmission" class="form-control" required>
+            {% for val, label in form.transmission.choices %}
+            <option value="{{ val }}" {% if form.transmission.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="drivetrain">Drivetrain</label>
+          <select id="drivetrain" name="drivetrain" class="form-control">
+            {% for val, label in form.drivetrain.choices %}
+            <option value="{{ val }}" {% if form.drivetrain.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="engine">Engine</label>
+          <input type="text" id="engine" name="engine" class="form-control" value="{{ form.engine.data or '' }}" placeholder="3.5L V6 Twin Turbo" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="horsepower">Horsepower</label>
+          <input type="number" id="horsepower" name="horsepower" class="form-control" value="{{ form.horsepower.data or '' }}" placeholder="300" min="0" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="exterior_color">Exterior Color</label>
+          <input type="text" id="exterior_color" name="exterior_color" class="form-control" value="{{ form.exterior_color.data or '' }}" placeholder="Pearl White" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="interior_color">Interior Color</label>
+          <input type="text" id="interior_color" name="interior_color" class="form-control" value="{{ form.interior_color.data or '' }}" placeholder="Black Leather" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="doors">Doors</label>
+          <input type="number" id="doors" name="doors" class="form-control" value="{{ form.doors.data or '' }}" placeholder="4" min="1" max="10" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="seats">Seats</label>
+          <input type="number" id="seats" name="seats" class="form-control" value="{{ form.seats.data or '' }}" placeholder="5" min="1" max="20" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 4: Location -->
+    <div class="form-section">
+      <h2 class="form-section-title"><i class="fa-solid fa-location-dot" aria-hidden="true"></i> Location</h2>
+      <div class="form-grid form-grid--3">
+        <div class="form-group">
+          <label class="form-label" for="city">City <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="city" name="city" class="form-control {% if form.city.errors %}is-invalid{% endif %}"
+            value="{{ form.city.data or '' }}" placeholder="Los Angeles" required />
+          {% if form.city.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.city.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="state">State <span class="required" aria-hidden="true">*</span></label>
+          <select id="state" name="state" class="form-control {% if form.state.errors %}is-invalid{% endif %}" required>
+            {% for val, label in form.state.choices %}
+            <option value="{{ val }}" {% if form.state.data == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          {% if form.state.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.state.errors[0] }}</span>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="zip_code">ZIP Code</label>
+          <input type="text" id="zip_code" name="zip_code" class="form-control" value="{{ form.zip_code.data or '' }}" placeholder="90001" maxlength="10" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Photos & Description -->
+    <div class="form-section">
+      <h2 class="form-section-title"><i class="fa-solid fa-images" aria-hidden="true"></i> Photos &amp; Description</h2>
+      <div class="form-grid">
+        <div class="form-group form-full">
+          <label class="form-label" for="primary_image_url">Main Photo URL</label>
+          <input type="url" id="primary_image_url" name="primary_image_url" class="form-control {% if form.primary_image_url.errors %}is-invalid{% endif %}"
+            value="{{ form.primary_image_url.data or '' }}" placeholder="https://..." oninput="previewMainImage(this.value)" />
+          {% if form.primary_image_url.errors %}<span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.primary_image_url.errors[0] }}</span>{% endif %}
+          <div class="image-preview-strip" id="main-preview"></div>
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label" for="extra_images">Additional Photo URLs <span class="form-hint" style="text-transform:none; font-weight:400;">(one per line)</span></label>
+          <textarea id="extra_images" name="extra_images" class="form-control" rows="4"
+            placeholder="https://example.com/photo2.jpg&#10;https://example.com/photo3.jpg">{{ form.extra_images.data or '' }}</textarea>
+          <span class="form-hint">Add up to 10 additional photo URLs, one per line.</span>
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label" for="description">Description</label>
+          <textarea id="description" name="description" class="form-control" rows="5"
+            placeholder="Describe the vehicle's condition, history, any recent maintenance, standout features…" maxlength="5000">{{ form.description.data or '' }}</textarea>
+          <span class="form-hint" id="desc-count" aria-live="polite">0 / 5000 characters</span>
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label" for="features">Features &amp; Options <span class="form-hint" style="text-transform:none; font-weight:400;">(one per line)</span></label>
+          <textarea id="features" name="features" class="form-control" rows="5"
+            placeholder="Sunroof&#10;Heated Seats&#10;Apple CarPlay&#10;Backup Camera&#10;Adaptive Cruise Control">{{ form.features.data or '' }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <a href="{{ url_for('dashboard.seller') }}" class="btn-ghost">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Cancel
+      </a>
+      <button type="submit" class="btn-primary btn-primary--lg">
+        {% if mode == 'edit' %}
+          <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save Changes
+        {% else %}
+          <i class="fa-solid fa-rocket" aria-hidden="true"></i> Post Listing
+        {% endif %}
+      </button>
+    </div>
+
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /* Main image URL live preview */
+  function previewMainImage(url) {
+    const strip = document.getElementById('main-preview');
+    if (!strip) return;
+    if (!url || !url.startsWith('http')) { strip.innerHTML = ''; return; }
+    strip.innerHTML = `
+      <div class="image-preview-item primary">
+        <img src="${url}" alt="Main photo preview" onerror="this.closest('.image-preview-item').remove()" />
+        <span class="image-preview-item__label">Main</span>
+      </div>`;
+  }
+
+  /* Trigger preview on page load for edit mode */
+  const mainUrlInput = document.getElementById('primary_image_url');
+  if (mainUrlInput && mainUrlInput.value) previewMainImage(mainUrlInput.value);
+
+  /* Description char counter */
+  const descArea  = document.getElementById('description');
+  const descCount = document.getElementById('desc-count');
+  if (descArea && descCount) {
+    function updateDescCount() {
+      descCount.textContent = `${descArea.value.length} / 5000 characters`;
+    }
+    descArea.addEventListener('input', updateDescCount);
+    updateDescCount();
+  }
+
+  /* Warn before leaving with unsaved changes */
+  let formDirty = false;
+  document.getElementById('listing-form')?.addEventListener('change', () => { formDirty = true; });
+  document.getElementById('listing-form')?.addEventListener('submit', () => { formDirty = false; });
+  window.addEventListener('beforeunload', e => {
+    if (formDirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+</script>
+{% endblock %}

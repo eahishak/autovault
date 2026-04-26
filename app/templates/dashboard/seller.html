@@ -1,0 +1,525 @@
+{% extends "base.html" %}
+
+{% block title %}Seller Dashboard{% endblock %}
+
+{% block body_class %}page-dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 0;
+    min-height: calc(100vh - var(--nav-h));
+  }
+
+  /* ── Sidebar ── */
+  .dash-sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--bg-elevated);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dash-sidebar__user {
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: .75rem;
+  }
+
+  .dash-sidebar__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #fff;
+    overflow: hidden;
+    margin-bottom: .625rem;
+  }
+  .dash-sidebar__avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .dash-sidebar__name  { font-weight: 700; font-size: .9375rem; }
+  .dash-sidebar__email { font-size: .75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .dash-nav-label {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    padding: .5rem 1.25rem .25rem;
+  }
+
+  .dash-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: .55rem 1.25rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background var(--dur-fast), color var(--dur-fast);
+    border-left: 3px solid transparent;
+    position: relative;
+  }
+  .dash-nav-link:hover { background: var(--bg-subtle); color: var(--text-primary); }
+  .dash-nav-link.active { background: var(--brand-light); color: var(--brand); border-left-color: var(--brand); font-weight: 600; }
+  .dash-nav-link i { width: 16px; text-align: center; font-size: .875rem; }
+
+  .dash-nav-badge {
+    margin-left: auto;
+    background: var(--brand);
+    color: #fff;
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+  }
+
+  /* ── Main content ── */
+  .dash-main { padding: 2rem clamp(1.25rem, 3vw, 2.5rem); }
+
+  .dash-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .dash-page-title { font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 800; }
+  .dash-page-sub   { color: var(--text-secondary); font-size: .875rem; margin-top: .25rem; }
+
+  /* ── Tabs ── */
+  .dash-tabs {
+    display: flex;
+    gap: .25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .dash-tabs::-webkit-scrollbar { display: none; }
+
+  .dash-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .6rem 1rem;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    transition: color var(--dur-fast), border-color var(--dur-fast);
+  }
+  .dash-tab:hover  { color: var(--text-primary); }
+  .dash-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+  .dash-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: var(--radius-full);
+    font-size: .65rem;
+    font-weight: 800;
+    background: var(--bg-muted);
+    color: var(--text-muted);
+  }
+  .dash-tab.active .dash-tab-count { background: var(--brand-light); color: var(--brand); }
+
+  .dash-panel { display: none; }
+  .dash-panel.active { display: block; }
+
+  /* Notification list */
+  .notif-feed { display: flex; flex-direction: column; gap: .5rem; }
+  .notif-feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .875rem;
+    padding: .875rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    transition: background var(--dur-fast);
+  }
+  .notif-feed-item--unread { border-left: 3px solid var(--brand); background: var(--brand-light); }
+  .notif-feed-item__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    background: var(--bg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .notif-feed-item__title { font-size: .875rem; font-weight: 600; }
+  .notif-feed-item__body  { font-size: .8rem; color: var(--text-secondary); margin-top: .1rem; }
+  .notif-feed-item__time  { font-size: .72rem; color: var(--text-muted); margin-top: .2rem; }
+
+  @media (max-width: 1024px) {
+    .dashboard-layout { grid-template-columns: 1fr; }
+    .dash-sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; padding: .75rem 1rem; border-right: none; border-bottom: 1px solid var(--border); gap: .25rem; }
+    .dash-sidebar__user { display: none; }
+    .dash-nav-label { display: none; }
+    .dash-nav-link { padding: .45rem .75rem; border-left: none; border-radius: var(--radius-full); font-size: .8rem; }
+    .dash-nav-link.active { border-left: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar" aria-label="Dashboard navigation">
+    <div class="dash-sidebar__user">
+      <div class="dash-sidebar__avatar">
+        {% if current_user.avatar_url %}
+        <img src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" />
+        {% else %}
+        {{ current_user.name[0].upper() }}
+        {% endif %}
+      </div>
+      <div class="dash-sidebar__name">{{ current_user.name }}</div>
+      <div class="dash-sidebar__email">{{ current_user.email }}</div>
+    </div>
+
+    <span class="dash-nav-label">Seller</span>
+    <a href="{{ url_for('dashboard.seller') }}" class="dash-nav-link active">
+      <i class="fa-solid fa-gauge" aria-hidden="true"></i> Overview
+    </a>
+    <a href="{{ url_for('listings.new_listing') }}" class="dash-nav-link">
+      <i class="fa-solid fa-circle-plus" aria-hidden="true"></i> New Listing
+    </a>
+    <a href="{{ url_for('messages.inbox') }}" class="dash-nav-link">
+      <i class="fa-solid fa-inbox" aria-hidden="true"></i> Messages
+      {% if unread > 0 %}<span class="dash-nav-badge">{{ unread }}</span>{% endif %}
+    </a>
+
+    <span class="dash-nav-label" style="margin-top:.5rem;">Account</span>
+    <a href="{{ url_for('auth.edit_profile') }}" class="dash-nav-link">
+      <i class="fa-solid fa-user-pen" aria-hidden="true"></i> Edit Profile
+    </a>
+    <a href="{{ url_for('main.browse') }}" class="dash-nav-link">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Browse Cars
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="dash-nav-link" style="margin-top:auto; color: var(--danger);">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+    </a>
+  </aside>
+
+  <!-- Main -->
+  <div class="dash-main">
+    <div class="dash-page-header">
+      <div>
+        <h1 class="dash-page-title">Seller Dashboard</h1>
+        <p class="dash-page-sub">Manage your listings and stay on top of buyer activity.</p>
+      </div>
+      <a href="{{ url_for('listings.new_listing') }}" class="btn-primary">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> New Listing
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+      <div class="stat-card">
+        <div class="stat-card__icon"><i class="fa-solid fa-list" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ active | length }}</div>
+        <div class="stat-card__label">Active Listings</div>
+      </div>
+      <div class="stat-card stat-card--blue">
+        <div class="stat-card__icon"><i class="fa-solid fa-eye" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ total_views }}</div>
+        <div class="stat-card__label">Total Views</div>
+      </div>
+      <div class="stat-card stat-card--green">
+        <div class="stat-card__icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ total_favorites }}</div>
+        <div class="stat-card__label">Saves</div>
+      </div>
+      <div class="stat-card stat-card--amber">
+        <div class="stat-card__icon"><i class="fa-solid fa-envelope" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ unread }}</div>
+        <div class="stat-card__label">Unread Messages</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="dash-tabs" role="tablist" aria-label="Listing status tabs">
+      <button class="dash-tab active" role="tab" aria-selected="true"  aria-controls="panel-active"   id="tab-active"   onclick="switchTab(this,'panel-active')">
+        Active <span class="dash-tab-count">{{ active | length }}</span>
+      </button>
+      <button class="dash-tab" role="tab" aria-selected="false" aria-controls="panel-archived" id="tab-archived" onclick="switchTab(this,'panel-archived')">
+        Archived <span class="dash-tab-count">{{ archived | length }}</span>
+      </button>
+      <button class="dash-tab" role="tab" aria-selected="false" aria-controls="panel-sold"     id="tab-sold"     onclick="switchTab(this,'panel-sold')">
+        Sold <span class="dash-tab-count">{{ sold | length }}</span>
+      </button>
+      <button class="dash-tab" role="tab" aria-selected="false" aria-controls="panel-notifs"   id="tab-notifs"   onclick="switchTab(this,'panel-notifs')">
+        Notifications <span class="dash-tab-count">{{ notifications | length }}</span>
+      </button>
+    </div>
+
+    <!-- Active listings -->
+    <div class="dash-panel active" id="panel-active" role="tabpanel" aria-labelledby="tab-active">
+      {% if active %}
+      <div class="listing-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Price</th>
+              <th>Mileage</th>
+              <th>Views</th>
+              <th>Saves</th>
+              <th>Listed</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for car in active %}
+            <tr>
+              <td>
+                <div style="display:flex; align-items:center; gap:.75rem;">
+                  {% if car.primary_image_url %}
+                  <img class="listing-table__thumb" src="{{ car.primary_image_url }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}" loading="lazy" />
+                  {% else %}
+                  <div class="listing-table__thumb" style="background:var(--bg-muted); display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:.875rem;">
+                    <i class="fa-solid fa-car" aria-hidden="true"></i>
+                  </div>
+                  {% endif %}
+                  <div>
+                    <a href="{{ url_for('main.car_detail', slug=car.slug) }}" class="listing-table__title">
+                      {{ car.year }} {{ car.make }} {{ car.model }}
+                    </a>
+                    <div class="listing-table__subtitle">{{ car.condition }} · {{ car.city }}, {{ car.state }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-weight:700; color:var(--brand);">{{ format_price(car.price) }}</td>
+              <td>{{ format_mileage(car.mileage) }}</td>
+              <td>{{ car.view_count or 0 }}</td>
+              <td>{{ car.favorite_count }}</td>
+              <td>{{ days_since(car.created_at) }}d ago</td>
+              <td>
+                <span class="status-pill status-pill--active">
+                  <i class="fa-solid fa-circle" aria-hidden="true"></i> Active
+                </span>
+              </td>
+              <td>
+                <div class="tbl-actions">
+                  <a href="{{ url_for('listings.edit_listing', car_id=car.id) }}" class="tbl-btn">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
+                  </a>
+                  <form action="{{ url_for('listings.mark_sold', car_id=car.id) }}" method="post" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="tbl-btn tbl-btn--primary">Sold</button>
+                  </form>
+                  <form action="{{ url_for('listings.delete_listing', car_id=car.id) }}" method="post" style="margin:0;"
+                    onsubmit="return confirm('Delete this listing?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="tbl-btn tbl-btn--danger">
+                      <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-car" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No active listings</h3>
+        <p class="empty-state__body">Post your first car listing and start getting buyer inquiries.</p>
+        <a href="{{ url_for('listings.new_listing') }}" class="btn-primary">Post a Car</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Archived listings -->
+    <div class="dash-panel" id="panel-archived" role="tabpanel" aria-labelledby="tab-archived">
+      {% if archived %}
+      <div class="listing-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Vehicle</th>
+              <th>Price</th>
+              <th>Archived</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for car in archived %}
+            <tr>
+              <td>
+                <div style="display:flex; align-items:center; gap:.75rem;">
+                  {% if car.primary_image_url %}
+                  <img class="listing-table__thumb" src="{{ car.primary_image_url }}" alt="" loading="lazy" />
+                  {% else %}
+                  <div class="listing-table__thumb" style="background:var(--bg-muted);display:flex;align-items:center;justify-content:center;color:var(--text-muted);">
+                    <i class="fa-solid fa-car" aria-hidden="true"></i>
+                  </div>
+                  {% endif %}
+                  <div>
+                    <span class="listing-table__title">{{ car.year }} {{ car.make }} {{ car.model }}</span>
+                    <div class="listing-table__subtitle">Listed {{ days_since(car.created_at) }} days</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-weight:700;">{{ format_price(car.price) }}</td>
+              <td>{{ time_ago(car.archived_at) }}</td>
+              <td>
+                <div class="tbl-actions">
+                  <form action="{{ url_for('listings.repost_listing', car_id=car.id) }}" method="post" style="margin:0;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="tbl-btn tbl-btn--primary">
+                      <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Repost
+                    </button>
+                  </form>
+                  <form action="{{ url_for('listings.delete_listing', car_id=car.id) }}" method="post" style="margin:0;"
+                    onsubmit="return confirm('Delete permanently?')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="tbl-btn tbl-btn--danger"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-box-archive" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No archived listings</h3>
+        <p class="empty-state__body">Listings older than 40 days are automatically archived here.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sold listings -->
+    <div class="dash-panel" id="panel-sold" role="tabpanel" aria-labelledby="tab-sold">
+      {% if sold %}
+      <div class="listing-table">
+        <table>
+          <thead>
+            <tr><th>Vehicle</th><th>Price</th><th>Sold</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {% for car in sold %}
+            <tr>
+              <td>
+                <div style="display:flex; align-items:center; gap:.75rem;">
+                  {% if car.primary_image_url %}
+                  <img class="listing-table__thumb" src="{{ car.primary_image_url }}" alt="" loading="lazy" />
+                  {% else %}
+                  <div class="listing-table__thumb" style="background:var(--bg-muted);display:flex;align-items:center;justify-content:center;color:var(--text-muted);">
+                    <i class="fa-solid fa-car" aria-hidden="true"></i>
+                  </div>
+                  {% endif %}
+                  <div>
+                    <span class="listing-table__title">{{ car.year }} {{ car.make }} {{ car.model }}</span>
+                    <div class="listing-table__subtitle">{{ car.city }}, {{ car.state }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="font-weight:700; color:var(--success);">{{ format_price(car.price) }}</td>
+              <td>{{ time_ago(car.sold_at) }}</td>
+              <td>
+                <form action="{{ url_for('listings.repost_listing', car_id=car.id) }}" method="post" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="tbl-btn tbl-btn--primary">
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Relist
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-handshake" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No sold vehicles yet</h3>
+        <p class="empty-state__body">Mark a listing as sold once the deal is done.</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Notifications -->
+    <div class="dash-panel" id="panel-notifs" role="tabpanel" aria-labelledby="tab-notifs">
+      {% if notifications %}
+      <div class="notif-feed">
+        {% for n in notifications %}
+        <div class="notif-feed-item {% if not n.is_read %}notif-feed-item--unread{% endif %}">
+          <div class="notif-feed-item__icon notif-type--{{ n.type }}">
+            <i class="fa-solid {% if n.type == 'new_message' %}fa-envelope{% elif n.type == 'listing_archived' %}fa-box-archive{% else %}fa-heart{% endif %}" aria-hidden="true"></i>
+          </div>
+          <div>
+            <div class="notif-feed-item__title">{{ n.title }}</div>
+            {% if n.body %}<div class="notif-feed-item__body">{{ n.body }}</div>{% endif %}
+            <div class="notif-feed-item__time">{{ time_ago(n.created_at) }}</div>
+          </div>
+          {% if n.link %}
+          <a href="{{ n.link }}" class="tbl-btn" style="margin-left:auto; flex-shrink:0;">View</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No notifications</h3>
+        <p class="empty-state__body">You'll see activity here when buyers message or save your listings.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchTab(btn, panelId) {
+    document.querySelectorAll('.dash-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    document.getElementById(panelId).classList.add('active');
+  }
+</script>
+{% endblock %}

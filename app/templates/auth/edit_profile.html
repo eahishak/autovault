@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile{% endblock %}
+{% block body_class %}page-auth{% endblock %}
+
+{% block extra_css %}
+<style>
+  .avatar-upload-zone {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .avatar-circle {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #fff;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    cursor: pointer;
+    transition: filter var(--dur-fast);
+  }
+  .avatar-circle:hover { filter: brightness(.85); }
+  .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-circle .avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--dur-fast);
+    border-radius: 50%;
+    color: #fff;
+    font-size: .875rem;
+  }
+  .avatar-circle:hover .avatar-overlay { opacity: 1; }
+
+  .avatar-upload-info { flex: 1; min-width: 180px; }
+  .avatar-upload-info h3 { font-size: .9375rem; font-weight: 700; margin-bottom: .25rem; }
+  .avatar-upload-info p  { font-size: .8rem; color: var(--text-muted); margin-bottom: .75rem; line-height: 1.5; }
+
+  .avatar-upload-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+  .btn-upload {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .45rem 1rem;
+    background: var(--brand); color: #fff;
+    border-radius: var(--radius-full);
+    font-size: .8125rem; font-weight: 700;
+    cursor: pointer; border: none;
+    transition: background var(--dur-fast);
+  }
+  .btn-upload:hover { background: var(--brand-hover); }
+
+  .btn-remove-avatar {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .45rem .875rem;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    border-radius: var(--radius-full);
+    font-size: .8125rem; font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--dur-fast), color var(--dur-fast);
+  }
+  .btn-remove-avatar:hover { border-color: var(--danger); color: var(--danger); }
+
+  .url-toggle-btn {
+    background: none; border: none;
+    font-size: .75rem; color: var(--text-muted);
+    cursor: pointer; text-decoration: underline;
+    padding: .25rem 0; margin-top: .25rem;
+    display: block;
+  }
+  .url-toggle-btn:hover { color: var(--brand); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin-inline: auto; padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;">
+
+  <nav aria-label="Breadcrumb" style="font-size:.78rem; color:var(--text-muted); margin-bottom:1.25rem; display:flex; gap:.4rem; align-items:center;">
+    <a href="{{ url_for('dashboard.index') }}" style="color:var(--text-muted); text-decoration:none;">Dashboard</a>
+    <i class="fa-solid fa-chevron-right" style="font-size:.55rem;" aria-hidden="true"></i>
+    <span>Edit Profile</span>
+  </nav>
+
+  <h1 style="font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; margin-bottom: .375rem;">Edit Profile</h1>
+  <p style="color: var(--text-secondary); font-size: .9rem; margin-bottom: 2rem;">Update your name, photo, and contact information.</p>
+
+  <form method="post" action="{{ url_for('auth.edit_profile') }}" novalidate id="profile-form">
+    {{ form.hidden_tag() }}
+
+    <!-- Avatar upload section -->
+    <div class="avatar-upload-zone">
+      <div class="avatar-circle" id="avatar-circle" onclick="document.getElementById('avatar-file-input').click()" title="Click to change photo">
+        {% if current_user.avatar_url %}
+        <img id="avatar-img" src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" />
+        {% else %}
+        <span id="avatar-initial">{{ current_user.name[0].upper() }}</span>
+        {% endif %}
+        <div class="avatar-overlay" aria-hidden="true">
+          <i class="fa-solid fa-camera"></i>
+        </div>
+      </div>
+
+      <div class="avatar-upload-info">
+        <h3>Profile Photo</h3>
+        <p>Upload a photo or paste a URL.<br>JPG, PNG or GIF · Max 5 MB · Square crop looks best.</p>
+        <div class="avatar-upload-actions">
+          <label class="btn-upload" for="avatar-file-input">
+            <i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i>
+            Upload Photo
+          </label>
+          <button type="button" class="btn-remove-avatar" id="remove-avatar-btn" onclick="removeAvatar()"
+            {% if not current_user.avatar_url %}style="display:none;"{% endif %}>
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+            Remove
+          </button>
+        </div>
+        <button type="button" class="url-toggle-btn" id="url-toggle-btn" onclick="toggleUrlInput()">
+          Or paste an image URL instead
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" id="avatar-file-input" accept="image/jpeg,image/png,image/gif,image/webp"
+           style="display:none;" onchange="handleFileUpload(this)" />
+
+    <!-- Hidden base64 data field -->
+    <input type="hidden" id="avatar-data" name="avatar_data" value="" />
+
+    <!-- URL input (hidden by default, shown via toggle) -->
+    <div id="url-input-section" style="display:none; margin-bottom:1.25rem;">
+      <label class="form-label" for="avatar_url">Image URL</label>
+      <input type="url" id="avatar_url" name="avatar_url"
+             class="form-control {% if form.avatar_url.errors %}is-invalid{% endif %}"
+             value="{{ form.avatar_url.data or '' }}"
+             placeholder="https://example.com/your-photo.jpg"
+             oninput="previewUrl(this.value)" />
+      {% if form.avatar_url.errors %}
+      <span class="form-error" role="alert">
+        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
+        {{ form.avatar_url.errors[0] }}
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Personal Info -->
+    <div class="form-section" style="background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 1.5rem 1.75rem; margin-bottom: 1.25rem;">
+      <h2 class="form-section-title">
+        <i class="fa-solid fa-user" aria-hidden="true"></i> Personal Info
+      </h2>
+      <div class="form-grid">
+        <div class="form-group form-full">
+          <label class="form-label" for="name">Full name <span class="required" aria-hidden="true">*</span></label>
+          <input type="text" id="name" name="name" class="form-control {% if form.name.errors %}is-invalid{% endif %}"
+            value="{{ form.name.data or '' }}" required autocomplete="name" />
+          {% if form.name.errors %}
+          <span class="form-error" role="alert"><i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ form.name.errors[0] }}</span>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="location">City, State</label>
+          <input type="text" id="location" name="location" class="form-control"
+            value="{{ form.location.data or '' }}" placeholder="New York, NY" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="phone">Phone number</label>
+          <input type="tel" id="phone" name="phone" class="form-control"
+            value="{{ form.phone.data or '' }}" placeholder="+1 (555) 000-0000" autocomplete="tel" />
+        </div>
+
+        <div class="form-group form-full">
+          <label class="form-label" for="bio">About me</label>
+          <textarea id="bio" name="bio" class="form-control" rows="3"
+            placeholder="Tell buyers or sellers a bit about yourself…" maxlength="1000">{{ form.bio.data or '' }}</textarea>
+          <span class="form-hint">Max 1000 characters.</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.75rem;">
+      <a href="{{ url_for('dashboard.index') }}" class="btn-ghost">
+        <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Cancel
+      </a>
+      <button type="submit" class="btn-primary btn-primary--lg">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save Profile
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+  const INITIAL = '{{ current_user.name[0].upper() }}';
+
+  function getCircle()  { return document.getElementById('avatar-circle'); }
+  function getImg()     { return document.getElementById('avatar-img'); }
+  function getInitial() { return document.getElementById('avatar-initial'); }
+
+  /* ── Render a new image inside the circle ── */
+  function setAvatar(src) {
+    const circle = getCircle();
+    circle.innerHTML = `
+      <img id="avatar-img" src="${src}" alt="Profile photo" style="width:100%;height:100%;object-fit:cover;" />
+      <div class="avatar-overlay" aria-hidden="true"><i class="fa-solid fa-camera"></i></div>`;
+    document.getElementById('remove-avatar-btn').style.display = '';
+  }
+
+  /* ── File upload → base64 ── */
+  function handleFileUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.size > MAX_SIZE) {
+      alert('Image is too large. Please choose a file under 5 MB.');
+      input.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      setAvatar(dataUrl);
+      document.getElementById('avatar-data').value = dataUrl;
+      // clear url field if any
+      document.getElementById('avatar_url').value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ── URL preview ── */
+  function previewUrl(url) {
+    if (!url) return;
+    if (url.startsWith('http')) {
+      setAvatar(url);
+      document.getElementById('avatar-data').value = '';
+    }
+  }
+
+  /* ── Remove photo ── */
+  function removeAvatar() {
+    const circle = getCircle();
+    circle.innerHTML = `
+      <span id="avatar-initial">${INITIAL}</span>
+      <div class="avatar-overlay" aria-hidden="true"><i class="fa-solid fa-camera"></i></div>`;
+    document.getElementById('avatar-data').value = 'REMOVE';
+    document.getElementById('avatar_url').value = '';
+    document.getElementById('remove-avatar-btn').style.display = 'none';
+    document.getElementById('avatar-file-input').value = '';
+  }
+
+  /* ── Toggle URL input ── */
+  function toggleUrlInput() {
+    const sec = document.getElementById('url-input-section');
+    const btn = document.getElementById('url-toggle-btn');
+    const visible = sec.style.display !== 'none';
+    sec.style.display = visible ? 'none' : 'block';
+    btn.textContent = visible ? 'Or paste an image URL instead' : 'Hide URL input';
+    if (!visible) document.getElementById('avatar_url').focus();
+  }
+</script>
+{% endblock %}

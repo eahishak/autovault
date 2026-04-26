@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}{{ seller.name }} — AutoVault Seller{% endblock %}
+{% block meta_description %}View {{ seller.name }}'s active car listings on AutoVault.{% endblock %}
+
+{% block body_class %}page-seller-profile{% endblock %}
+
+{% block content %}
+<div style="max-width: var(--container); margin-inline: auto; padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;">
+
+  <!-- Profile header -->
+  <div style="
+    background: var(--stone-900);
+    border-radius: var(--radius-xl);
+    padding: 2.5rem 2rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.5rem 2rem;
+    align-items: center;
+    margin-bottom: 2.5rem;
+  ">
+    <!-- Avatar -->
+    <div style="
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      overflow: hidden;
+      flex-shrink: 0;
+    ">
+      {% if seller.avatar_url %}
+      <img src="{{ seller.avatar_url }}" alt="{{ seller.name }}" style="width:100%; height:100%; object-fit:cover;" />
+      {% else %}
+      {{ seller.name[0].upper() }}
+      {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div>
+      <div style="display:flex; align-items:center; gap:.75rem; flex-wrap:wrap;">
+        <h1 style="font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 800; color: #fff;">
+          {{ seller.name }}
+        </h1>
+        {% if seller.is_verified %}
+        <span style="display:inline-flex; align-items:center; gap:.3rem; font-size:.72rem; font-weight:700; color:#4ade80; text-transform:uppercase; letter-spacing:.05em;">
+          <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Verified
+        </span>
+        {% endif %}
+      </div>
+
+      <div style="display:flex; flex-wrap:wrap; gap:.75rem 1.5rem; margin-top:.5rem; font-size:.8375rem; color:var(--stone-400);">
+        {% if seller.location %}
+        <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ seller.location }}</span>
+        {% endif %}
+        <span><i class="fa-solid fa-calendar" aria-hidden="true"></i> Member since {{ seller.created_at.strftime('%B %Y') if seller.created_at else '' }}</span>
+        {% if seller.avg_rating %}
+        <span>
+          <span style="color:#f59e0b;">
+            {% for i in range(1, 6) %}{{ '★' if i <= seller.avg_rating | round else '☆' }}{% endfor %}
+          </span>
+          {{ seller.avg_rating }} rating
+        </span>
+        {% endif %}
+      </div>
+
+      {% if seller.bio %}
+      <p style="margin-top: .875rem; font-size: .875rem; color: var(--stone-400); max-width: 60ch; line-height: 1.65;">
+        {{ seller.bio }}
+      </p>
+      {% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:.875rem; text-align:center;">
+      <div>
+        <div style="font-family:var(--font-display); font-size:1.75rem; font-weight:800; color:#fff; line-height:1;">
+          {{ cars | length }}
+        </div>
+        <div style="font-size:.7rem; color:var(--stone-500); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">Active</div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display); font-size:1.75rem; font-weight:800; color:#fff; line-height:1;">
+          {{ seller.listings.filter_by(status='sold').count() }}
+        </div>
+        <div style="font-size:.7rem; color:var(--stone-500); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">Sold</div>
+      </div>
+      <div>
+        <div style="font-family:var(--font-display); font-size:1.75rem; font-weight:800; color:{% if seller.avg_rating %}var(--red-400){% else %}var(--stone-600){% endif %}; line-height:1;">
+          {{ seller.avg_rating or '—' }}
+        </div>
+        <div style="font-size:.7rem; color:var(--stone-500); text-transform:uppercase; letter-spacing:.05em; margin-top:2px;">Rating</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active listings -->
+  <div class="section-heading">
+    <h2 class="section-heading__title">Active Listings</h2>
+    <span style="font-size:.875rem; color:var(--text-muted);">{{ cars | length }} vehicle{{ 's' if cars | length != 1 else '' }}</span>
+  </div>
+
+  {% if cars %}
+  <div class="car-grid">
+    {% for car in cars %}
+    {% include "partials/car_card.html" %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-car" aria-hidden="true"></i></div>
+    <h3 class="empty-state__title">No active listings</h3>
+    <p class="empty-state__body">This seller doesn't have any active listings right now.</p>
+    <a href="{{ url_for('main.browse') }}" class="btn-primary">Browse All Cars</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — Users{% endblock %}
+{% block body_class %}page-admin{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - var(--nav-h));
+  }
+
+  .admin-sidebar {
+    background: var(--stone-900);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-sidebar__brand {
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: .75rem;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--stone-500);
+  }
+
+  .admin-nav-label {
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--stone-600);
+    padding: .625rem 1.25rem .2rem;
+  }
+
+  .admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: .55rem 1.25rem;
+    font-size: .8375rem;
+    font-weight: 500;
+    color: var(--stone-400);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .admin-nav-link:hover { background: rgba(255,255,255,.06); color: var(--stone-200); }
+  .admin-nav-link.active { background: rgba(185,28,28,.15); color: var(--red-400); border-left-color: var(--brand); }
+  .admin-nav-link i { width: 16px; text-align: center; }
+
+  .admin-main { padding: 2rem clamp(1.25rem, 3vw, 2.5rem); }
+
+  .admin-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: .5rem .875rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+    font-size: .875rem;
+    color: var(--text-primary);
+    transition: border-color var(--dur) var(--ease);
+  }
+  .admin-search-input:focus { outline: none; border-color: var(--brand); }
+
+  .role-filter-tabs {
+    display: flex;
+    gap: .25rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: .25rem;
+  }
+
+  .role-filter-tab {
+    padding: .35rem .75rem;
+    border-radius: var(--radius);
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background var(--dur-fast), color var(--dur-fast);
+    white-space: nowrap;
+  }
+  .role-filter-tab:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .role-filter-tab.active { background: var(--bg-elevated); color: var(--brand); box-shadow: var(--shadow-xs); }
+
+  @media (max-width: 1024px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar {
+      position: static; height: auto;
+      flex-direction: row; flex-wrap: wrap;
+      padding: .75rem 1rem; gap: .25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-sidebar__brand, .admin-nav-label { display: none; }
+    .admin-nav-link { padding: .4rem .75rem; border-left: none; border-radius: var(--radius-full); font-size: .8rem; }
+    .admin-nav-link.active { border-left: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <aside class="admin-sidebar" aria-label="Admin navigation">
+    <div class="admin-sidebar__brand">Admin Panel</div>
+    <span class="admin-nav-label">Overview</span>
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link">
+      <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin.stats') }}" class="admin-nav-link">
+      <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Statistics
+    </a>
+    <span class="admin-nav-label">Manage</span>
+    <a href="{{ url_for('admin.users') }}" class="admin-nav-link active">
+      <i class="fa-solid fa-users" aria-hidden="true"></i> Users
+    </a>
+    <a href="{{ url_for('admin.listings') }}" class="admin-nav-link">
+      <i class="fa-solid fa-list" aria-hidden="true"></i> Listings
+    </a>
+    <span class="admin-nav-label" style="margin-top:.5rem;">Site</span>
+    <a href="{{ url_for('main.index') }}" class="admin-nav-link">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Site
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="admin-nav-link" style="color:var(--red-400);">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+    </a>
+  </aside>
+
+  <div class="admin-main">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+      <div>
+        <h1 style="font-size:clamp(1.375rem,3vw,1.875rem); font-weight:800;">Users</h1>
+        <p style="color:var(--text-secondary); font-size:.875rem; margin-top:.2rem;">
+          {{ pagination.total }} total user{{ 's' if pagination.total != 1 else '' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <form method="get" action="{{ url_for('admin.users') }}" class="admin-toolbar">
+      <input
+        type="search"
+        name="q"
+        class="admin-search-input"
+        placeholder="Search by name or email…"
+        value="{{ q }}"
+        aria-label="Search users"
+      />
+      {% if role %}<input type="hidden" name="role" value="{{ role }}" />{% endif %}
+      <button type="submit" class="btn-primary btn-sm">Search</button>
+      {% if q or role %}
+      <a href="{{ url_for('admin.users') }}" class="btn-ghost btn-sm">Clear</a>
+      {% endif %}
+    </form>
+
+    <!-- Role filter tabs -->
+    <div class="role-filter-tabs" style="margin-bottom:1.25rem; display:inline-flex;" role="tablist" aria-label="Filter by role">
+      <a href="{{ url_for('admin.users', q=q) }}"
+         class="role-filter-tab {% if not role %}active{% endif %}" role="tab" aria-selected="{{ 'true' if not role else 'false' }}">
+        All
+      </a>
+      <a href="{{ url_for('admin.users', role='buyer', q=q) }}"
+         class="role-filter-tab {% if role == 'buyer' %}active{% endif %}" role="tab" aria-selected="{{ 'true' if role == 'buyer' else 'false' }}">
+        Buyers
+      </a>
+      <a href="{{ url_for('admin.users', role='seller', q=q) }}"
+         class="role-filter-tab {% if role == 'seller' %}active{% endif %}" role="tab" aria-selected="{{ 'true' if role == 'seller' else 'false' }}">
+        Sellers
+      </a>
+      <a href="{{ url_for('admin.users', role='admin', q=q) }}"
+         class="role-filter-tab {% if role == 'admin' %}active{% endif %}" role="tab" aria-selected="{{ 'true' if role == 'admin' else 'false' }}">
+        Admins
+      </a>
+    </div>
+
+    {% if users %}
+    <div class="listing-table">
+      <table>
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Role</th>
+            <th>Location</th>
+            <th>Listings</th>
+            <th>Joined</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:.75rem;">
+                <div style="
+                  width:36px; height:36px; border-radius:50%;
+                  background:var(--brand); display:flex; align-items:center;
+                  justify-content:center; font-family:var(--font-display);
+                  font-size:.875rem; font-weight:800; color:#fff;
+                  overflow:hidden; flex-shrink:0;
+                ">
+                  {% if user.avatar_url %}
+                  <img src="{{ user.avatar_url }}" alt="" style="width:100%;height:100%;object-fit:cover;" />
+                  {% else %}{{ user.name[0].upper() }}{% endif %}
+                </div>
+                <div>
+                  <div style="font-weight:600; font-size:.875rem;">{{ user.name }}</div>
+                  <div style="font-size:.75rem; color:var(--text-muted);">{{ user.email }}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="role-badge role-badge--{{ user.role }}">{{ user.role }}</span></td>
+            <td style="font-size:.8rem; color:var(--text-muted);">{{ user.location or '—' }}</td>
+            <td style="font-size:.875rem;">{{ user.listings.count() }}</td>
+            <td style="font-size:.78rem; color:var(--text-muted);">{{ time_ago(user.created_at) }}</td>
+            <td>
+              {% if user.is_verified %}
+              <span style="display:inline-flex; align-items:center; gap:.25rem; font-size:.72rem; font-weight:700; color:var(--success);">
+                <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Verified
+              </span>
+              {% else %}
+              <span style="font-size:.72rem; color:var(--text-muted);">Unverified</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="tbl-actions">
+                <form action="{{ url_for('admin.toggle_verified', user_id=user.id) }}" method="post" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="tbl-btn {% if user.is_verified %}tbl-btn--danger{% else %}tbl-btn--primary{% endif %}">
+                    {% if user.is_verified %}Unverify{% else %}Verify{% endif %}
+                  </button>
+                </form>
+                {% if user.id != current_user.id %}
+                <form action="{{ url_for('admin.delete_user', user_id=user.id) }}" method="post" style="margin:0;"
+                  onsubmit="return confirm('Delete {{ user.name }}? This removes all their listings and messages.')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="tbl-btn tbl-btn--danger">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <nav class="pagination" aria-label="User pages" style="margin-top:1.5rem;">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('admin.users', page=pagination.prev_num, role=role, q=q) }}" class="page-link" aria-label="Previous">
+        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+      </a>
+      {% endif %}
+      {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+        {% if p %}
+        <a href="{{ url_for('admin.users', page=p, role=role, q=q) }}"
+           class="page-link {% if p == pagination.page %}active{% endif %}"
+           {% if p == pagination.page %}aria-current="page"{% endif %}>{{ p }}</a>
+        {% else %}
+        <span class="page-link disabled">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if pagination.has_next %}
+      <a href="{{ url_for('admin.users', page=pagination.next_num, role=role, q=q) }}" class="page-link" aria-label="Next">
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+      <h3 class="empty-state__title">No users found</h3>
+      <p class="empty-state__body">Try adjusting your search or filter.</p>
+      <a href="{{ url_for('admin.users') }}" class="btn-primary">Clear Filters</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

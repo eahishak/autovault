@@ -1,0 +1,135 @@
+{#
+  Partial: app/templates/partials/car_card.html
+  Expects: car (Car model instance)
+  Optional: favorited_ids (set of car IDs the current user has favorited)
+#}
+<article class="car-card" data-car-id="{{ car.id }}">
+
+  <div class="car-card__image-wrap">
+    {% if car.primary_image_url %}
+    <img
+      class="car-card__image"
+      src="{{ car.primary_image_url }}"
+      alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+      loading="lazy"
+      decoding="async"
+      width="400"
+      height="250"
+    />
+    {% else %}
+    <div class="car-card__image-placeholder" aria-label="No image available">
+      <i class="fa-solid fa-car" aria-hidden="true"></i>
+    </div>
+    {% endif %}
+
+    <!-- Status badges -->
+    <div class="car-card__badges" aria-label="Listing badges">
+      {% if car.is_new_arrival %}
+      <span class="badge badge--new-arrival">
+        <i class="fa-solid fa-bolt" aria-hidden="true"></i> New
+      </span>
+      {% endif %}
+      {% if car.has_price_drop %}
+      <span class="badge badge--price-drop">
+        <i class="fa-solid fa-arrow-down" aria-hidden="true"></i> Price Drop
+      </span>
+      {% endif %}
+      {% if car.is_low_mileage %}
+      <span class="badge badge--low-mileage">
+        <i class="fa-solid fa-gauge-simple-low" aria-hidden="true"></i> Low Mi
+      </span>
+      {% endif %}
+      {% if car.is_featured %}
+      <span class="badge badge--featured">
+        <i class="fa-solid fa-star" aria-hidden="true"></i> Featured
+      </span>
+      {% endif %}
+      {% if car.condition == 'Certified Pre-Owned' %}
+      <span class="badge badge--certified">CPO</span>
+      {% endif %}
+      {% if car.fuel_type == 'Electric' %}
+      <span class="badge badge--electric">
+        <i class="fa-solid fa-plug" aria-hidden="true"></i> EV
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Favorite button -->
+    {% if current_user.is_authenticated %}
+    <button
+      class="car-card__fav {% if favorited_ids is defined and car.id in favorited_ids %}active{% endif %}"
+      data-fav-id="{{ car.id }}"
+      aria-label="{{ 'Remove from saved' if favorited_ids is defined and car.id in favorited_ids else 'Save car' }}"
+      aria-pressed="{{ 'true' if favorited_ids is defined and car.id in favorited_ids else 'false' }}"
+    >
+      <i class="{% if favorited_ids is defined and car.id in favorited_ids %}fa-solid{% else %}fa-regular{% endif %} fa-heart" aria-hidden="true"></i>
+    </button>
+    {% endif %}
+
+    <!-- Compare checkbox -->
+    <label class="car-card__compare">
+      <input
+        type="checkbox"
+        class="compare-checkbox"
+        data-compare-id="{{ car.id }}"
+        data-compare-title="{{ car.year }} {{ car.make }} {{ car.model }}"
+        aria-label="Add {{ car.year }} {{ car.make }} {{ car.model }} to comparison"
+      />
+      Compare
+    </label>
+  </div>
+
+  <div class="car-card__body">
+    <div class="car-card__title-row">
+      <a
+        href="{{ url_for('main.car_detail', slug=car.slug) if car.slug else url_for('main.car_by_id', car_id=car.id) }}"
+        class="car-card__title"
+      >
+        {{ car.year }} {{ car.make }} {{ car.model }}
+        {% if car.trim %}<span style="font-weight:400; color: var(--text-muted);">{{ car.trim }}</span>{% endif %}
+      </a>
+      <div>
+        <span class="car-card__price">{{ format_price(car.price) }}</span>
+        {% if car.has_price_drop %}
+        <span class="car-card__price--original">{{ format_price(car.original_price) }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="car-card__meta" aria-label="Vehicle specs">
+      <span class="car-card__meta-item">
+        <i class="fa-solid fa-gauge" aria-hidden="true"></i>
+        {{ format_mileage(car.mileage) }}
+      </span>
+      <span class="car-card__meta-item">
+        <i class="fa-solid fa-gas-pump" aria-hidden="true"></i>
+        {{ car.fuel_type }}
+      </span>
+      <span class="car-card__meta-item">
+        <i class="fa-solid fa-gears" aria-hidden="true"></i>
+        {{ car.transmission }}
+      </span>
+      {% if car.exterior_color %}
+      <span class="car-card__meta-item">
+        <i class="fa-solid fa-palette" aria-hidden="true"></i>
+        {{ car.exterior_color }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="car-card__footer">
+    <span class="car-card__location">
+      <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+      {{ car.city }}{% if car.state %}, {{ car.state }}{% endif %}
+    </span>
+    <span class="car-card__days">
+      {% set d = days_since(car.created_at) %}
+      {% if d == 0 %}Today
+      {% elif d == 1 %}1 day ago
+      {% else %}{{ d }}d ago
+      {% endif %}
+    </span>
+  </div>
+
+</article>

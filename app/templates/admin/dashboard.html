@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block body_class %}page-admin{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - var(--nav-h));
+  }
+
+  .admin-sidebar {
+    background: var(--stone-900);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .admin-sidebar__brand {
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: .75rem;
+    font-family: var(--font-display);
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--stone-500);
+  }
+
+  .admin-nav-label {
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--stone-600);
+    padding: .625rem 1.25rem .2rem;
+  }
+
+  .admin-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: .55rem 1.25rem;
+    font-size: .8375rem;
+    font-weight: 500;
+    color: var(--stone-400);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .admin-nav-link:hover { background: rgba(255,255,255,.06); color: var(--stone-200); }
+  .admin-nav-link.active { background: rgba(185,28,28,.15); color: var(--red-400); border-left-color: var(--brand); }
+  .admin-nav-link i { width: 16px; text-align: center; }
+
+  .admin-main { padding: 2rem clamp(1.25rem, 3vw, 2.5rem); }
+
+  .admin-page-header { margin-bottom: 1.75rem; }
+  .admin-page-title { font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 800; }
+  .admin-page-sub   { color: var(--text-secondary); font-size: .875rem; margin-top: .25rem; }
+
+  .admin-section-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .admin-section-title i { font-size: .875rem; }
+
+  /* Top makes bar chart */
+  .makes-chart { display: flex; flex-direction: column; gap: .5rem; }
+  .makes-bar-row { display: flex; align-items: center; gap: .75rem; }
+  .makes-bar-label { font-size: .8rem; font-weight: 600; width: 100px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .makes-bar-track { flex: 1; height: 10px; background: var(--bg-muted); border-radius: var(--radius-full); overflow: hidden; }
+  .makes-bar-fill  { height: 100%; background: var(--brand); border-radius: var(--radius-full); transition: width .6s var(--ease-out); }
+  .makes-bar-count { font-size: .78rem; color: var(--text-muted); width: 32px; text-align: right; flex-shrink: 0; }
+
+  @media (max-width: 1024px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar {
+      position: static;
+      height: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      padding: .75rem 1rem;
+      gap: .25rem;
+    }
+    .admin-sidebar__brand, .admin-nav-label { display: none; }
+    .admin-nav-link { padding: .4rem .75rem; border-left: none; border-radius: var(--radius-full); font-size: .8rem; }
+    .admin-nav-link.active { border-left: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" aria-label="Admin navigation">
+    <div class="admin-sidebar__brand">Admin Panel</div>
+
+    <span class="admin-nav-label">Overview</span>
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link active">
+      <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin.stats') }}" class="admin-nav-link">
+      <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Statistics
+    </a>
+
+    <span class="admin-nav-label">Manage</span>
+    <a href="{{ url_for('admin.users') }}" class="admin-nav-link">
+      <i class="fa-solid fa-users" aria-hidden="true"></i> Users
+    </a>
+    <a href="{{ url_for('admin.listings') }}" class="admin-nav-link">
+      <i class="fa-solid fa-list" aria-hidden="true"></i> Listings
+    </a>
+
+    <span class="admin-nav-label" style="margin-top:.5rem;">Site</span>
+    <a href="{{ url_for('main.index') }}" class="admin-nav-link">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Site
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="admin-nav-link" style="color: var(--red-400);">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+    </a>
+  </aside>
+
+  <!-- Main -->
+  <div class="admin-main">
+    <div class="admin-page-header">
+      <h1 class="admin-page-title">
+        <i class="fa-solid fa-shield-halved" style="color:var(--brand);" aria-hidden="true"></i>
+        Admin Dashboard
+      </h1>
+      <p class="admin-page-sub">Platform overview and quick actions.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card__icon"><i class="fa-solid fa-users" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ stats.total_users }}</div>
+        <div class="stat-card__label">Total Users</div>
+      </div>
+      <div class="stat-card stat-card--green">
+        <div class="stat-card__icon"><i class="fa-solid fa-car" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ stats.total_active }}</div>
+        <div class="stat-card__label">Active Listings</div>
+      </div>
+      <div class="stat-card stat-card--amber">
+        <div class="stat-card__icon"><i class="fa-solid fa-box-archive" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ stats.total_archived }}</div>
+        <div class="stat-card__label">Archived</div>
+      </div>
+      <div class="stat-card stat-card--blue">
+        <div class="stat-card__icon"><i class="fa-solid fa-handshake" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ stats.total_sold }}</div>
+        <div class="stat-card__label">Sold</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__icon"><i class="fa-solid fa-envelope" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ stats.total_messages }}</div>
+        <div class="stat-card__label">Messages Sent</div>
+      </div>
+      <div class="stat-card stat-card--green">
+        <div class="stat-card__icon"><i class="fa-solid fa-user-plus" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ stats.new_users_week }}</div>
+        <div class="stat-card__label">New This Week</div>
+      </div>
+    </div>
+
+    <!-- Top makes -->
+    {% if top_makes %}
+    <div class="admin-section-title">
+      <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Top Makes (Active Listings)
+    </div>
+    {% set max_count = top_makes[0][1] if top_makes else 1 %}
+    <div class="makes-chart">
+      {% for make, cnt in top_makes %}
+      <div class="makes-bar-row">
+        <span class="makes-bar-label">{{ make }}</span>
+        <div class="makes-bar-track">
+          <div class="makes-bar-fill" style="width: {{ (cnt / max_count * 100) | round }}%;"></div>
+        </div>
+        <span class="makes-bar-count">{{ cnt }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Two-column grid: recent users + recent listings -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+
+      <!-- Recent users -->
+      <div>
+        <div class="admin-section-title" style="margin-top:0;">
+          <i class="fa-solid fa-users" aria-hidden="true"></i> Recent Users
+          <a href="{{ url_for('admin.users') }}" style="margin-left:auto; font-size:.75rem; color:var(--brand); font-weight:600; text-transform:none; letter-spacing:0;">View all</a>
+        </div>
+        <div class="listing-table">
+          <table>
+            <thead>
+              <tr><th>Name</th><th>Role</th><th>Joined</th></tr>
+            </thead>
+            <tbody>
+              {% for u in recent_users %}
+              <tr>
+                <td>
+                  <div style="font-weight:600; font-size:.875rem;">{{ u.name }}</div>
+                  <div style="font-size:.75rem; color:var(--text-muted);">{{ u.email }}</div>
+                </td>
+                <td><span class="role-badge role-badge--{{ u.role }}">{{ u.role }}</span></td>
+                <td style="font-size:.78rem; color:var(--text-muted);">{{ time_ago(u.created_at) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent listings -->
+      <div>
+        <div class="admin-section-title" style="margin-top:0;">
+          <i class="fa-solid fa-car" aria-hidden="true"></i> Recent Listings
+          <a href="{{ url_for('admin.listings') }}" style="margin-left:auto; font-size:.75rem; color:var(--brand); font-weight:600; text-transform:none; letter-spacing:0;">View all</a>
+        </div>
+        <div class="listing-table">
+          <table>
+            <thead>
+              <tr><th>Vehicle</th><th>Price</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              {% for car in recent_cars %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('main.car_detail', slug=car.slug) if car.slug else '#' }}" class="listing-table__title">
+                    {{ car.year }} {{ car.make }} {{ car.model }}
+                  </a>
+                  <div class="listing-table__subtitle">{{ time_ago(car.created_at) }}</div>
+                </td>
+                <td style="font-weight:700; font-size:.875rem;">{{ format_price(car.price) }}</td>
+                <td><span class="status-pill status-pill--{{ car.status }}">{{ car.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

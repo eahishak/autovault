@@ -1,0 +1,431 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard{% endblock %}
+
+{% block body_class %}page-dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: calc(100vh - var(--nav-h));
+  }
+
+  .dash-sidebar {
+    border-right: 1px solid var(--border);
+    background: var(--bg-elevated);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dash-sidebar__user {
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: .75rem;
+  }
+
+  .dash-sidebar__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #fff;
+    overflow: hidden;
+    margin-bottom: .625rem;
+  }
+  .dash-sidebar__avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .dash-sidebar__name  { font-weight: 700; font-size: .9375rem; }
+  .dash-sidebar__email { font-size: .75rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .dash-nav-label {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    padding: .5rem 1.25rem .25rem;
+  }
+
+  .dash-nav-link {
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    padding: .55rem 1.25rem;
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background var(--dur-fast), color var(--dur-fast);
+    border-left: 3px solid transparent;
+  }
+  .dash-nav-link:hover { background: var(--bg-subtle); color: var(--text-primary); }
+  .dash-nav-link.active { background: var(--brand-light); color: var(--brand); border-left-color: var(--brand); font-weight: 600; }
+  .dash-nav-link i { width: 16px; text-align: center; }
+
+  .dash-main { padding: 2rem clamp(1.25rem, 3vw, 2.5rem); }
+
+  .dash-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  .dash-page-title { font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 800; }
+  .dash-page-sub   { color: var(--text-secondary); font-size: .875rem; margin-top: .25rem; }
+
+  .dash-tabs {
+    display: flex;
+    gap: .25rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .dash-tabs::-webkit-scrollbar { display: none; }
+
+  .dash-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .6rem 1rem;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+    transition: color var(--dur-fast), border-color var(--dur-fast);
+  }
+  .dash-tab:hover { color: var(--text-primary); }
+  .dash-tab.active { color: var(--brand); border-bottom-color: var(--brand); }
+
+  .dash-tab-count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: var(--radius-full);
+    font-size: .65rem;
+    font-weight: 800;
+    background: var(--bg-muted);
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dash-tab.active .dash-tab-count { background: var(--brand-light); color: var(--brand); }
+
+  .dash-panel { display: none; }
+  .dash-panel.active { display: block; }
+
+  /* Saved car card — compact horizontal layout */
+  .saved-list { display: flex; flex-direction: column; gap: .75rem; }
+
+  .saved-item {
+    display: grid;
+    grid-template-columns: 120px 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: .875rem;
+    transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  }
+  .saved-item:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); }
+
+  .saved-item__img {
+    width: 120px;
+    height: 80px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    background: var(--bg-muted);
+    display: block;
+  }
+  .saved-item__img-placeholder {
+    width: 120px;
+    height: 80px;
+    border-radius: var(--radius);
+    background: var(--bg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+  }
+
+  .saved-item__title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--text-primary);
+    display: block;
+    margin-bottom: .25rem;
+  }
+  .saved-item__title:hover { color: var(--brand); }
+
+  .saved-item__price { color: var(--brand); font-weight: 700; font-size: .9375rem; }
+  .saved-item__meta  { font-size: .8rem; color: var(--text-secondary); margin-top: .25rem; }
+
+  .saved-item__actions { display: flex; flex-direction: column; gap: .375rem; align-items: flex-end; }
+
+  .notif-feed { display: flex; flex-direction: column; gap: .5rem; }
+  .notif-feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .875rem;
+    padding: .875rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .notif-feed-item--unread { border-left: 3px solid var(--brand); background: var(--brand-light); }
+  .notif-feed-item__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    background: var(--bg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .8rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .notif-feed-item__title { font-size: .875rem; font-weight: 600; }
+  .notif-feed-item__body  { font-size: .8rem; color: var(--text-secondary); margin-top: .1rem; }
+  .notif-feed-item__time  { font-size: .72rem; color: var(--text-muted); margin-top: .2rem; }
+
+  @media (max-width: 1024px) {
+    .dashboard-layout { grid-template-columns: 1fr; }
+    .dash-sidebar {
+      position: static;
+      height: auto;
+      flex-direction: row;
+      flex-wrap: wrap;
+      padding: .75rem 1rem;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      gap: .25rem;
+    }
+    .dash-sidebar__user, .dash-nav-label { display: none; }
+    .dash-nav-link { padding: .45rem .75rem; border-left: none; border-radius: var(--radius-full); font-size: .8rem; }
+    .dash-nav-link.active { border-left: none; }
+  }
+
+  @media (max-width: 600px) {
+    .saved-item { grid-template-columns: 80px 1fr; }
+    .saved-item__img, .saved-item__img-placeholder { width: 80px; height: 56px; }
+    .saved-item__actions { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+
+  <!-- Sidebar -->
+  <aside class="dash-sidebar" aria-label="Dashboard navigation">
+    <div class="dash-sidebar__user">
+      <div class="dash-sidebar__avatar">
+        {% if current_user.avatar_url %}
+        <img src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" />
+        {% else %}{{ current_user.name[0].upper() }}{% endif %}
+      </div>
+      <div class="dash-sidebar__name">{{ current_user.name }}</div>
+      <div class="dash-sidebar__email">{{ current_user.email }}</div>
+    </div>
+
+    <span class="dash-nav-label">Buyer</span>
+    <a href="{{ url_for('dashboard.buyer') }}" class="dash-nav-link active">
+      <i class="fa-solid fa-gauge" aria-hidden="true"></i> Overview
+    </a>
+    <a href="{{ url_for('main.browse') }}" class="dash-nav-link">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Browse Cars
+    </a>
+    <a href="{{ url_for('messages.inbox') }}" class="dash-nav-link">
+      <i class="fa-solid fa-inbox" aria-hidden="true"></i> Messages
+    </a>
+    <a href="{{ url_for('main.compare') }}" class="dash-nav-link">
+      <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i> Compare
+    </a>
+
+    <span class="dash-nav-label" style="margin-top:.5rem;">Account</span>
+    <a href="{{ url_for('auth.edit_profile') }}" class="dash-nav-link">
+      <i class="fa-solid fa-user-pen" aria-hidden="true"></i> Edit Profile
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="dash-nav-link" style="margin-top:auto; color:var(--danger);">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+    </a>
+  </aside>
+
+  <!-- Main -->
+  <div class="dash-main">
+    <div class="dash-page-header">
+      <div>
+        <h1 class="dash-page-title">Welcome back, {{ current_user.name.split()[0] }}</h1>
+        <p class="dash-page-sub">Track your saved cars and stay on top of seller responses.</p>
+      </div>
+      <a href="{{ url_for('main.browse') }}" class="btn-primary">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Browse Cars
+      </a>
+    </div>
+
+    <!-- Quick stats -->
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+      <div class="stat-card">
+        <div class="stat-card__icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ saved | length }}</div>
+        <div class="stat-card__label">Saved Cars</div>
+      </div>
+      <div class="stat-card stat-card--blue">
+        <div class="stat-card__icon"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ viewed_cars | length }}</div>
+        <div class="stat-card__label">Recently Viewed</div>
+      </div>
+      <div class="stat-card stat-card--amber">
+        <div class="stat-card__icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></div>
+        <div class="stat-card__value">{{ notifications | selectattr('is_read', 'eq', false) | list | length }}</div>
+        <div class="stat-card__label">New Notifications</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="dash-tabs" role="tablist">
+      <button class="dash-tab active" role="tab" aria-selected="true"  aria-controls="panel-saved"   id="tab-saved"   onclick="switchTab(this,'panel-saved')">
+        Saved Cars <span class="dash-tab-count">{{ saved | length }}</span>
+      </button>
+      <button class="dash-tab" role="tab" aria-selected="false" aria-controls="panel-viewed"  id="tab-viewed"  onclick="switchTab(this,'panel-viewed')">
+        Recently Viewed <span class="dash-tab-count">{{ viewed_cars | length }}</span>
+      </button>
+      <button class="dash-tab" role="tab" aria-selected="false" aria-controls="panel-notifs"  id="tab-notifs"  onclick="switchTab(this,'panel-notifs')">
+        Notifications <span class="dash-tab-count">{{ notifications | length }}</span>
+      </button>
+    </div>
+
+    <!-- Saved cars -->
+    <div class="dash-panel active" id="panel-saved" role="tabpanel" aria-labelledby="tab-saved">
+      {% if saved %}
+      <div class="saved-list">
+        {% for fav in saved %}
+        {% set car = fav.car %}
+        <div class="saved-item">
+          {% if car.primary_image_url %}
+          <img class="saved-item__img" src="{{ car.primary_image_url }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}" loading="lazy" />
+          {% else %}
+          <div class="saved-item__img-placeholder" aria-hidden="true"><i class="fa-solid fa-car"></i></div>
+          {% endif %}
+
+          <div>
+            <a href="{{ url_for('main.car_detail', slug=car.slug) }}" class="saved-item__title">
+              {{ car.year }} {{ car.make }} {{ car.model }}{% if car.trim %} {{ car.trim }}{% endif %}
+            </a>
+            <div class="saved-item__price">{{ format_price(car.price) }}</div>
+            <div class="saved-item__meta">
+              {{ format_mileage(car.mileage) }} &middot; {{ car.condition }} &middot; {{ car.city }}, {{ car.state }}
+            </div>
+            {% if car.is_new_arrival %}<span class="badge badge--new-arrival" style="margin-top:.375rem;">New</span>{% endif %}
+            {% if car.has_price_drop %}<span class="badge badge--price-drop" style="margin-top:.375rem;">Price Drop</span>{% endif %}
+          </div>
+
+          <div class="saved-item__actions">
+            <a href="{{ url_for('main.car_detail', slug=car.slug) }}" class="btn-primary btn-sm">View</a>
+            <button class="btn-ghost btn-sm car-card__fav active" data-fav-id="{{ car.id }}" aria-label="Remove from saved" aria-pressed="true" style="width:100%; justify-content:center;">
+              <i class="fa-solid fa-heart" aria-hidden="true"></i> Unsave
+            </button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-heart" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No saved cars yet</h3>
+        <p class="empty-state__body">Tap the heart on any listing to save it here for later.</p>
+        <a href="{{ url_for('main.browse') }}" class="btn-primary">Start Browsing</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Recently viewed -->
+    <div class="dash-panel" id="panel-viewed" role="tabpanel" aria-labelledby="tab-viewed">
+      {% if viewed_cars %}
+      <div class="car-grid car-grid--compact">
+        {% for car in viewed_cars %}
+        {% include "partials/car_card.html" %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No browsing history</h3>
+        <p class="empty-state__body">Cars you view will appear here so you can find them again quickly.</p>
+        <a href="{{ url_for('main.browse') }}" class="btn-primary">Browse Cars</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Notifications -->
+    <div class="dash-panel" id="panel-notifs" role="tabpanel" aria-labelledby="tab-notifs">
+      {% if notifications %}
+      <div class="notif-feed">
+        {% for n in notifications %}
+        <div class="notif-feed-item {% if not n.is_read %}notif-feed-item--unread{% endif %}">
+          <div class="notif-feed-item__icon notif-type--{{ n.type }}">
+            <i class="fa-solid {% if n.type == 'new_message' %}fa-envelope{% elif n.type == 'listing_archived' %}fa-box-archive{% else %}fa-heart{% endif %}" aria-hidden="true"></i>
+          </div>
+          <div style="flex:1; min-width:0;">
+            <div class="notif-feed-item__title">{{ n.title }}</div>
+            {% if n.body %}<div class="notif-feed-item__body">{{ n.body }}</div>{% endif %}
+            <div class="notif-feed-item__time">{{ time_ago(n.created_at) }}</div>
+          </div>
+          {% if n.link %}
+          <a href="{{ n.link }}" class="tbl-btn" style="flex-shrink:0;">View</a>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <div class="empty-state__icon"><i class="fa-solid fa-bell" aria-hidden="true"></i></div>
+        <h3 class="empty-state__title">No notifications</h3>
+        <p class="empty-state__body">You'll be notified when sellers respond to your messages.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchTab(btn, panelId) {
+    document.querySelectorAll('.dash-tab').forEach(t => {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.dash-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    document.getElementById(panelId).classList.add('active');
+  }
+</script>
+{% endblock %}

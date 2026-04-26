@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — Listings{% endblock %}
+{% block body_class %}page-admin{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - var(--nav-h));
+  }
+  .admin-sidebar {
+    background: var(--stone-900);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .admin-sidebar__brand {
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: .75rem;
+    font-size: .75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--stone-500);
+  }
+  .admin-nav-label {
+    font-size: .65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--stone-600);
+    padding: .625rem 1.25rem .2rem;
+  }
+  .admin-nav-link {
+    display: flex; align-items: center; gap: .625rem;
+    padding: .55rem 1.25rem;
+    font-size: .8375rem; font-weight: 500;
+    color: var(--stone-400); text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .admin-nav-link:hover { background: rgba(255,255,255,.06); color: var(--stone-200); }
+  .admin-nav-link.active { background: rgba(185,28,28,.15); color: var(--red-400); border-left-color: var(--brand); }
+  .admin-nav-link i { width: 16px; text-align: center; }
+  .admin-main { padding: 2rem clamp(1.25rem, 3vw, 2.5rem); }
+
+  .status-tabs {
+    display: flex; gap: .25rem;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: .25rem;
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .status-tabs::-webkit-scrollbar { display: none; }
+  .status-tab {
+    padding: .35rem .875rem;
+    border-radius: var(--radius);
+    font-size: .8rem; font-weight: 600;
+    color: var(--text-secondary); text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .status-tab:hover { background: var(--bg-elevated); color: var(--text-primary); }
+  .status-tab.active { background: var(--bg-elevated); color: var(--brand); box-shadow: var(--shadow-xs); }
+
+  @media (max-width: 1024px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar {
+      position: static; height: auto;
+      flex-direction: row; flex-wrap: wrap;
+      padding: .75rem 1rem; gap: .25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-sidebar__brand, .admin-nav-label { display: none; }
+    .admin-nav-link { padding: .4rem .75rem; border-left: none; border-radius: var(--radius-full); font-size: .8rem; }
+    .admin-nav-link.active { border-left: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <aside class="admin-sidebar" aria-label="Admin navigation">
+    <div class="admin-sidebar__brand">Admin Panel</div>
+    <span class="admin-nav-label">Overview</span>
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link">
+      <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin.stats') }}" class="admin-nav-link">
+      <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Statistics
+    </a>
+    <span class="admin-nav-label">Manage</span>
+    <a href="{{ url_for('admin.users') }}" class="admin-nav-link">
+      <i class="fa-solid fa-users" aria-hidden="true"></i> Users
+    </a>
+    <a href="{{ url_for('admin.listings') }}" class="admin-nav-link active">
+      <i class="fa-solid fa-list" aria-hidden="true"></i> Listings
+    </a>
+    <span class="admin-nav-label" style="margin-top:.5rem;">Site</span>
+    <a href="{{ url_for('main.index') }}" class="admin-nav-link">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Site
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="admin-nav-link" style="color:var(--red-400);">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+    </a>
+  </aside>
+
+  <div class="admin-main">
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem;">
+      <div>
+        <h1 style="font-size:clamp(1.375rem,3vw,1.875rem); font-weight:800;">Listings</h1>
+        <p style="color:var(--text-secondary); font-size:.875rem; margin-top:.2rem;">
+          {{ pagination.total }} listing{{ 's' if pagination.total != 1 else '' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <form method="get" action="{{ url_for('admin.listings') }}"
+          style="display:flex; gap:.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+      <input type="hidden" name="status" value="{{ status }}" />
+      <input type="search" name="q" class="form-control" style="max-width:320px;"
+             placeholder="Search make or model…" value="{{ q }}" aria-label="Search listings" />
+      <button type="submit" class="btn-primary btn-sm">Search</button>
+      {% if q %}<a href="{{ url_for('admin.listings', status=status) }}" class="btn-ghost btn-sm">Clear</a>{% endif %}
+    </form>
+
+    <!-- Status tabs -->
+    <div class="status-tabs" role="tablist" aria-label="Filter by status">
+      {% for s, label in [('active','Active'), ('archived','Archived'), ('sold','Sold'), ('draft','Draft')] %}
+      <a href="{{ url_for('admin.listings', status=s, q=q) }}"
+         class="status-tab {% if status == s %}active{% endif %}"
+         role="tab" aria-selected="{{ 'true' if status == s else 'false' }}">
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+
+    {% if cars %}
+    <div class="listing-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehicle</th>
+            <th>Price</th>
+            <th>Seller</th>
+            <th>Location</th>
+            <th>Views</th>
+            <th>Listed</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for car in cars %}
+          <tr>
+            <td>
+              <div style="display:flex; align-items:center; gap:.75rem;">
+                {% if car.primary_image_url %}
+                <img class="listing-table__thumb" src="{{ car.primary_image_url }}" alt="" loading="lazy" />
+                {% else %}
+                <div class="listing-table__thumb" style="background:var(--bg-muted);display:flex;align-items:center;justify-content:center;color:var(--text-muted);">
+                  <i class="fa-solid fa-car" aria-hidden="true"></i>
+                </div>
+                {% endif %}
+                <div>
+                  <a href="{{ url_for('main.car_detail', slug=car.slug) if car.slug else '#' }}"
+                     class="listing-table__title" target="_blank" rel="noopener">
+                    {{ car.year }} {{ car.make }} {{ car.model }}
+                  </a>
+                  <div class="listing-table__subtitle">{{ car.condition }} · {{ car.body_type }}</div>
+                </div>
+              </div>
+            </td>
+            <td style="font-weight:700; color:var(--brand);">{{ format_price(car.price) }}</td>
+            <td>
+              <div style="font-size:.8rem; font-weight:600;">{{ car.seller.name }}</div>
+              <div style="font-size:.72rem; color:var(--text-muted);">{{ car.seller.email }}</div>
+            </td>
+            <td style="font-size:.8rem; color:var(--text-muted);">{{ car.city }}, {{ car.state }}</td>
+            <td style="font-size:.875rem;">{{ car.view_count or 0 }}</td>
+            <td style="font-size:.78rem; color:var(--text-muted);">{{ time_ago(car.created_at) }}</td>
+            <td>
+              <span class="status-pill status-pill--{{ car.status }}">{{ car.status }}</span>
+              {% if car.is_featured %}
+              <span class="badge badge--featured" style="margin-top:.25rem; display:block;">Featured</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="tbl-actions">
+                <!-- Feature toggle -->
+                <form action="{{ url_for('admin.toggle_featured', car_id=car.id) }}" method="post" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="tbl-btn {% if car.is_featured %}tbl-btn--primary{% endif %}"
+                          title="{{ 'Unfeature' if car.is_featured else 'Feature' }}">
+                    <i class="fa-solid fa-star" aria-hidden="true"></i>
+                  </button>
+                </form>
+                <!-- Archive (only for active listings) -->
+                {% if car.status == 'active' %}
+                <form action="{{ url_for('admin.archive_listing', car_id=car.id) }}" method="post" style="margin:0;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="tbl-btn" title="Archive">
+                    <i class="fa-solid fa-box-archive" aria-hidden="true"></i>
+                  </button>
+                </form>
+                {% endif %}
+                <!-- Delete -->
+                <form action="{{ url_for('admin.delete_listing', car_id=car.id) }}" method="post" style="margin:0;"
+                      onsubmit="return confirm('Permanently delete this listing?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                  <button type="submit" class="tbl-btn tbl-btn--danger" title="Delete">
+                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="pagination" aria-label="Listing pages" style="margin-top:1.5rem;">
+      {% if pagination.has_prev %}
+      <a href="{{ url_for('admin.listings', page=pagination.prev_num, status=status, q=q) }}" class="page-link" aria-label="Previous">
+        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+      </a>
+      {% endif %}
+      {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+        {% if p %}
+        <a href="{{ url_for('admin.listings', page=p, status=status, q=q) }}"
+           class="page-link {% if p == pagination.page %}active{% endif %}"
+           {% if p == pagination.page %}aria-current="page"{% endif %}>{{ p }}</a>
+        {% else %}
+        <span class="page-link disabled">…</span>
+        {% endif %}
+      {% endfor %}
+      {% if pagination.has_next %}
+      <a href="{{ url_for('admin.listings', page=pagination.next_num, status=status, q=q) }}" class="page-link" aria-label="Next">
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </a>
+      {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-car" aria-hidden="true"></i></div>
+      <h3 class="empty-state__title">No listings found</h3>
+      <p class="empty-state__body">No {{ status }} listings match your search.</p>
+      <a href="{{ url_for('admin.listings') }}" class="btn-primary">Clear Filters</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

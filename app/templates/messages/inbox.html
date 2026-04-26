@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Inbox{% endblock %}
+
+{% block body_class %}page-messages{% endblock %}
+
+{% block extra_css %}
+<style>
+  .inbox-layout {
+    max-width: 860px;
+    margin-inline: auto;
+    padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;
+  }
+
+  .inbox-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+  }
+
+  .inbox-title { font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 800; }
+  .inbox-subtitle { color: var(--text-secondary); font-size: .875rem; margin-top: .2rem; }
+
+  .convo-list { display: flex; flex-direction: column; gap: .5rem; }
+
+  .convo-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur-fast);
+    position: relative;
+  }
+  .convo-item:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); background: var(--bg-subtle); }
+  .convo-item--unread { border-left: 3px solid var(--brand); }
+  .convo-item--unread .convo-item__name { color: var(--text-primary); }
+
+  .convo-item__avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--brand);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: #fff;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .convo-item__avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .convo-item__avatar--other { background: var(--stone-500); }
+
+  .convo-item__name {
+    font-size: .9375rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: .1rem;
+  }
+  .convo-item--unread .convo-item__name { color: var(--text-primary); font-weight: 700; }
+
+  .convo-item__car {
+    font-size: .78rem;
+    color: var(--brand);
+    font-weight: 600;
+    margin-bottom: .25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .convo-item__preview {
+    font-size: .8375rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 480px;
+  }
+  .convo-item--unread .convo-item__preview { color: var(--text-secondary); font-weight: 500; }
+
+  .convo-item__meta { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: .4rem; flex-shrink: 0; }
+  .convo-item__time { font-size: .72rem; color: var(--text-muted); white-space: nowrap; }
+
+  .convo-item__unread-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--brand);
+    flex-shrink: 0;
+  }
+
+  .car-thumb {
+    width: 48px;
+    height: 34px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    display: block;
+    background: var(--bg-muted);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inbox-layout">
+  <div class="inbox-header">
+    <div>
+      <h1 class="inbox-title">
+        <i class="fa-solid fa-inbox" aria-hidden="true"></i> Inbox
+      </h1>
+      <p class="inbox-subtitle">
+        {{ conversations | length }} conversation{{ 's' if conversations | length != 1 else '' }}
+      </p>
+    </div>
+    <a href="{{ url_for('main.browse') }}" class="btn-ghost">
+      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Browse Cars
+    </a>
+  </div>
+
+  {% if conversations %}
+  <div class="convo-list" role="list" aria-label="Conversations">
+    {% for convo in conversations %}
+    <a
+      href="{{ url_for('messages.conversation', car_id=convo.car.id, other_user_id=convo.other.id) }}"
+      class="convo-item {% if convo.unread > 0 %}convo-item--unread{% endif %}"
+      role="listitem"
+      aria-label="Conversation with {{ convo.other.name }} about {{ convo.car.year }} {{ convo.car.make }} {{ convo.car.model }}{% if convo.unread > 0 %}, {{ convo.unread }} unread{% endif %}"
+    >
+      <!-- Avatar -->
+      <div class="convo-item__avatar convo-item__avatar--other">
+        {% if convo.other.avatar_url %}
+        <img src="{{ convo.other.avatar_url }}" alt="{{ convo.other.name }}" loading="lazy" />
+        {% else %}
+        {{ convo.other.name[0].upper() }}
+        {% endif %}
+      </div>
+
+      <!-- Content -->
+      <div style="min-width: 0;">
+        <div class="convo-item__name">{{ convo.other.name }}</div>
+        <div class="convo-item__car">
+          <i class="fa-solid fa-car" aria-hidden="true"></i>
+          {{ convo.car.year }} {{ convo.car.make }} {{ convo.car.model }} &mdash; {{ format_price(convo.car.price) }}
+        </div>
+        {% if convo.last_msg %}
+        <div class="convo-item__preview">
+          {% if convo.last_msg.sender_id == current_user.id %}
+          <span style="color: var(--text-muted);">You: </span>
+          {% endif %}
+          {{ convo.last_msg.content | truncate(80) }}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Meta -->
+      <div class="convo-item__meta">
+        {% if convo.last_msg %}
+        <span class="convo-item__time">{{ time_ago(convo.last_msg.created_at) }}</span>
+        {% endif %}
+        {% if convo.unread > 0 %}
+        <span class="convo-item__unread-dot" aria-label="{{ convo.unread }} unread messages"></span>
+        {% endif %}
+        {% if convo.car.primary_image_url %}
+        <img class="car-thumb" src="{{ convo.car.primary_image_url }}" alt="" loading="lazy" />
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-comments" aria-hidden="true"></i></div>
+    <h3 class="empty-state__title">No messages yet</h3>
+    <p class="empty-state__body">
+      Browse listings and message sellers to start a conversation.
+      All your threads will appear here.
+    </p>
+    <a href="{{ url_for('main.browse') }}" class="btn-primary">Browse Cars</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

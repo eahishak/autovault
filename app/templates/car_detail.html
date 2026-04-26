@@ -1,0 +1,888 @@
+{% extends "base.html" %}
+
+{% block title %}{{ car.year }} {{ car.make }} {{ car.model }}{% if car.trim %} {{ car.trim }}{% endif %}{% endblock %}
+{% block meta_description %}{{ car.year }} {{ car.make }} {{ car.model }} for {{ format_price(car.price) }}. {{ format_mileage(car.mileage) }} · {{ car.condition }} · {{ car.city }}, {{ car.state }}.{% endblock %}
+{% block og_title %}{{ car.year }} {{ car.make }} {{ car.model }} — {{ format_price(car.price) }}{% endblock %}
+{% block og_description %}{{ car.condition }} · {{ format_mileage(car.mileage) }} · {{ car.city }}, {{ car.state }}{% endblock %}
+{% block og_image %}{{ car.primary_image_url or super() }}{% endblock %}
+
+{% block body_class %}page-car-detail{% endblock %}
+
+{% block extra_css %}
+<style>
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 2rem;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: 1.5rem clamp(1rem, 4vw, 2rem) 4rem;
+    align-items: start;
+  }
+
+  /* ── Gallery ──────────────────────────────────────────────── */
+  .gallery {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: var(--bg-muted);
+    position: relative;
+  }
+
+  .gallery__main {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    cursor: zoom-in;
+  }
+
+  .gallery__main-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--dur-slow) var(--ease);
+    display: block;
+  }
+  .gallery__main:hover .gallery__main-img { transform: scale(1.02); }
+
+  .gallery__placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: var(--text-muted);
+    aspect-ratio: 16/10;
+  }
+
+  /* Gallery nav arrows */
+  .gallery__arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .875rem;
+    z-index: 2;
+    border: none;
+    cursor: pointer;
+    transition: background var(--dur-fast), transform var(--dur-fast);
+    backdrop-filter: blur(4px);
+  }
+  .gallery__arrow:hover { background: rgba(0,0,0,.75); }
+  .gallery__arrow--prev { left: .75rem; }
+  .gallery__arrow--next { right: .75rem; }
+  .gallery__arrow:active { transform: translateY(-50%) scale(.93); }
+
+  /* Image counter */
+  .gallery__counter {
+    position: absolute;
+    bottom: .75rem;
+    right: .75rem;
+    padding: .25rem .625rem;
+    background: rgba(0,0,0,.6);
+    color: #fff;
+    font-size: .75rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    backdrop-filter: blur(4px);
+  }
+
+  /* Thumbnail strip */
+  .gallery__thumbs {
+    display: flex;
+    gap: .5rem;
+    padding: .625rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    background: var(--bg-subtle);
+    border-top: 1px solid var(--border);
+  }
+  .gallery__thumb {
+    width: 72px;
+    height: 52px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color var(--dur-fast), opacity var(--dur-fast);
+    opacity: .65;
+  }
+  .gallery__thumb.active { border-color: var(--brand); opacity: 1; }
+  .gallery__thumb:hover { opacity: 1; }
+  .gallery__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ── Detail header ────────────────────────────────────────── */
+  .detail-header { margin-bottom: 1.5rem; }
+
+  .detail-header__breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    font-size: .78rem;
+    color: var(--text-muted);
+    margin-bottom: .875rem;
+    flex-wrap: wrap;
+  }
+  .detail-header__breadcrumb a { color: var(--text-muted); text-decoration: none; }
+  .detail-header__breadcrumb a:hover { color: var(--brand); }
+  .detail-header__breadcrumb i { font-size: .55rem; }
+
+  .detail-header__title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .detail-header__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.625rem, 4vw, 2.25rem);
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  .detail-header__price-block { text-align: right; flex-shrink: 0; }
+  .detail-header__price {
+    font-family: var(--font-display);
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: var(--brand);
+    line-height: 1;
+  }
+  .detail-header__price-orig {
+    font-size: .875rem;
+    color: var(--text-muted);
+    text-decoration: line-through;
+    display: block;
+    text-align: right;
+    margin-top: .25rem;
+  }
+
+  .detail-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem 1.25rem;
+    margin-top: .875rem;
+    font-size: .875rem;
+    color: var(--text-secondary);
+  }
+  .detail-header__meta-item {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+  }
+  .detail-header__meta-item i { color: var(--text-muted); font-size: .8rem; }
+
+  .detail-header__badges { display: flex; flex-wrap: wrap; gap: .375rem; margin-top: .75rem; }
+
+  /* ── Specs table ──────────────────────────────────────────── */
+  .specs-section { margin-top: 1.75rem; }
+
+  .specs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--bg-elevated);
+  }
+
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    gap: .75rem;
+  }
+  .spec-row:nth-child(even) { background: var(--bg-subtle); }
+  .spec-row:last-child,
+  .spec-row:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+
+  .spec-label {
+    font-size: .78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .spec-value {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right;
+  }
+
+  /* ── Features list ────────────────────────────────────────── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: .5rem;
+    margin-top: .875rem;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .8375rem;
+    color: var(--text-secondary);
+    padding: .375rem .5rem;
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
+    border: 1px solid var(--border);
+  }
+  .feature-item i { color: var(--success); font-size: .75rem; flex-shrink: 0; }
+
+  /* ── Right sidebar ────────────────────────────────────────── */
+  .detail-sidebar { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  /* Price / action card */
+  .action-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .action-card__header {
+    background: var(--stone-900);
+    padding: 1.25rem 1.375rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .action-card__price-big {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+  }
+  .action-card__price-orig {
+    font-size: .8rem;
+    color: var(--stone-400);
+    text-decoration: line-through;
+    margin-top: 3px;
+  }
+
+  .action-card__body { padding: 1.25rem 1.375rem; display: flex; flex-direction: column; gap: .75rem; }
+
+  .action-card__stat-row {
+    display: flex;
+    gap: .75rem;
+  }
+  .action-card__stat {
+    flex: 1;
+    text-align: center;
+    padding: .625rem .5rem;
+    background: var(--bg-subtle);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+  }
+  .action-card__stat-val { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+  .action-card__stat-lbl { font-size: .68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 1px; }
+
+  /* Payment calculator */
+  .calc-section {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 1.25rem 1.375rem;
+  }
+
+  .calc-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .calc-title i { color: var(--brand); }
+
+  .calc-result {
+    text-align: center;
+    padding: .875rem;
+    background: var(--brand-light);
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+    border: 1px solid var(--red-200);
+  }
+  .calc-monthly {
+    font-family: var(--font-display);
+    font-size: 1.875rem;
+    font-weight: 800;
+    color: var(--brand);
+    line-height: 1;
+  }
+  .calc-monthly-lbl { font-size: .75rem; color: var(--brand-text); margin-top: .2rem; }
+
+  /* Message form */
+  .msg-form-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+  .msg-form-header {
+    padding: .875rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    font-size: .875rem;
+    font-weight: 700;
+    background: var(--bg-subtle);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .msg-form-header i { color: var(--brand); }
+  .msg-form-body { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: .75rem; }
+
+  /* View count badge */
+  .view-count {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    font-size: .78rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 1024px) {
+    .detail-layout { grid-template-columns: 1fr; }
+    .detail-sidebar { order: -1; }
+    .specs-grid { grid-template-columns: 1fr; }
+    .spec-row:nth-child(even) { background: var(--bg-elevated); }
+    .spec-row:nth-child(4n+2), .spec-row:nth-child(4n+3) { background: var(--bg-subtle); }
+  }
+
+  @media (max-width: 640px) {
+    .detail-header__title-row { flex-direction: column; }
+    .detail-header__price-block { text-align: left; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-layout">
+
+  <!-- ── Left column ─────────────────────────────────────────────────── -->
+  <div>
+
+    <!-- Breadcrumb -->
+    <nav class="detail-header__breadcrumb" aria-label="Breadcrumb">
+      <a href="{{ url_for('main.index') }}">Home</a>
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      <a href="{{ url_for('main.browse') }}">Browse</a>
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      <a href="{{ url_for('main.browse') }}?make={{ car.make | urlencode }}">{{ car.make }}</a>
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      <span aria-current="page">{{ car.year }} {{ car.model }}</span>
+    </nav>
+
+    <!-- Image gallery -->
+    <div class="gallery" id="gallery" aria-label="Vehicle photos">
+      <div class="gallery__main" id="gallery-main" role="img" aria-label="Main vehicle photo">
+        {% set all_images = [] %}
+        {% if car.primary_image_url %}{% set _ = all_images.append(car.primary_image_url) %}{% endif %}
+        {% for img in images %}{% if img.url != car.primary_image_url %}{% set _ = all_images.append(img.url) %}{% endif %}{% endfor %}
+
+        {% if all_images %}
+        <img
+          class="gallery__main-img"
+          id="gallery-main-img"
+          src="{{ all_images[0] }}"
+          alt="{{ car.year }} {{ car.make }} {{ car.model }} — photo 1 of {{ all_images | length }}"
+        />
+        {% if all_images | length > 1 %}
+        <button class="gallery__arrow gallery__arrow--prev" id="gallery-prev" aria-label="Previous photo">
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </button>
+        <button class="gallery__arrow gallery__arrow--next" id="gallery-next" aria-label="Next photo">
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+        <span class="gallery__counter" id="gallery-counter" aria-live="polite">1 / {{ all_images | length }}</span>
+        {% endif %}
+        {% else %}
+        <div class="gallery__placeholder" aria-label="No photos available">
+          <i class="fa-solid fa-car" aria-hidden="true"></i>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if all_images | length > 1 %}
+      <div class="gallery__thumbs" role="list" aria-label="Photo thumbnails">
+        {% for url in all_images %}
+        <button
+          class="gallery__thumb {% if loop.first %}active{% endif %}"
+          data-index="{{ loop.index0 }}"
+          data-src="{{ url }}"
+          role="listitem"
+          aria-label="Photo {{ loop.index }}"
+          aria-pressed="{{ 'true' if loop.first else 'false' }}"
+        >
+          <img src="{{ url }}" alt="Thumbnail {{ loop.index }}" loading="lazy" />
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Title + price (mobile-visible, hidden on desktop via grid order) -->
+    <div class="detail-header" style="margin-top: 1.5rem;">
+      <div class="detail-header__title-row">
+        <h1 class="detail-header__title">
+          {{ car.year }} {{ car.make }} {{ car.model }}
+          {% if car.trim %}<span style="font-weight:400; color: var(--text-secondary);">{{ car.trim }}</span>{% endif %}
+        </h1>
+        <div class="detail-header__price-block">
+          <span class="detail-header__price">{{ format_price(car.price) }}</span>
+          {% if car.has_price_drop %}
+          <span class="detail-header__price-orig">{{ format_price(car.original_price) }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="detail-header__meta" aria-label="Key details">
+        <span class="detail-header__meta-item">
+          <i class="fa-solid fa-gauge" aria-hidden="true"></i>
+          {{ format_mileage(car.mileage) }}
+        </span>
+        <span class="detail-header__meta-item">
+          <i class="fa-solid fa-calendar" aria-hidden="true"></i>
+          {{ car.year }}
+        </span>
+        <span class="detail-header__meta-item">
+          <i class="fa-solid fa-gas-pump" aria-hidden="true"></i>
+          {{ car.fuel_type }}
+        </span>
+        <span class="detail-header__meta-item">
+          <i class="fa-solid fa-gears" aria-hidden="true"></i>
+          {{ car.transmission }}
+        </span>
+        {% if car.drivetrain %}
+        <span class="detail-header__meta-item">
+          <i class="fa-solid fa-arrows-spin" aria-hidden="true"></i>
+          {{ car.drivetrain }}
+        </span>
+        {% endif %}
+        <span class="detail-header__meta-item">
+          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+          {{ car.city }}, {{ car.state }}
+        </span>
+        <span class="view-count">
+          <i class="fa-solid fa-eye" aria-hidden="true"></i>
+          {{ car.view_count or 0 }} views
+        </span>
+      </div>
+
+      <div class="detail-header__badges" aria-label="Listing badges">
+        {% if car.is_new_arrival %}<span class="badge badge--new-arrival"><i class="fa-solid fa-bolt" aria-hidden="true"></i> New Arrival</span>{% endif %}
+        {% if car.has_price_drop %}<span class="badge badge--price-drop"><i class="fa-solid fa-arrow-down" aria-hidden="true"></i> Price Drop</span>{% endif %}
+        {% if car.is_low_mileage %}<span class="badge badge--low-mileage"><i class="fa-solid fa-gauge-simple-low" aria-hidden="true"></i> Low Mileage</span>{% endif %}
+        {% if car.is_featured %}<span class="badge badge--featured"><i class="fa-solid fa-star" aria-hidden="true"></i> Featured</span>{% endif %}
+        {% if car.condition == 'Certified Pre-Owned' %}<span class="badge badge--certified">Certified Pre-Owned</span>{% endif %}
+        {% if car.fuel_type == 'Electric' %}<span class="badge badge--electric"><i class="fa-solid fa-plug" aria-hidden="true"></i> Electric Vehicle</span>{% endif %}
+        <span class="badge badge--{{ 'new-car' if car.condition == 'New' else 'used-car' }}">{{ car.condition }}</span>
+      </div>
+    </div>
+
+    <!-- Full specs -->
+    <section class="specs-section" aria-labelledby="specs-heading">
+      <h2 id="specs-heading" class="form-section-title">
+        <i class="fa-solid fa-list-check" aria-hidden="true"></i>
+        Vehicle Specifications
+      </h2>
+
+      <div class="specs-grid" role="table" aria-label="Vehicle specifications">
+        {% set specs = [
+          ('Make',          car.make),
+          ('Model',         car.model),
+          ('Year',          car.year),
+          ('Trim',          car.trim or '—'),
+          ('Condition',     car.condition),
+          ('Body Type',     car.body_type),
+          ('Mileage',       format_mileage(car.mileage)),
+          ('Fuel Type',     car.fuel_type),
+          ('Transmission',  car.transmission),
+          ('Drivetrain',    car.drivetrain or '—'),
+          ('Engine',        car.engine or '—'),
+          ('Horsepower',    (car.horsepower | string + ' hp') if car.horsepower else '—'),
+          ('Ext. Color',    car.exterior_color or '—'),
+          ('Int. Color',    car.interior_color or '—'),
+          ('Doors',         (car.doors | string) if car.doors else '—'),
+          ('Seats',         (car.seats | string) if car.seats else '—'),
+          ('VIN',           car.vin or '—'),
+          ('Listed',        time_ago(car.created_at)),
+        ] %}
+        {% for label, value in specs %}
+        <div class="spec-row" role="row">
+          <span class="spec-label" role="rowheader">{{ label }}</span>
+          <span class="spec-value" role="cell">{{ value }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Description -->
+    {% if car.description %}
+    <section style="margin-top: 1.75rem;" aria-labelledby="desc-heading">
+      <h2 id="desc-heading" class="form-section-title">
+        <i class="fa-solid fa-align-left" aria-hidden="true"></i>
+        Description
+      </h2>
+      <div style="line-height: 1.75; color: var(--text-secondary); font-size: .9375rem; white-space: pre-line;">{{ car.description }}</div>
+    </section>
+    {% endif %}
+
+    <!-- Features -->
+    {% if features %}
+    <section style="margin-top: 1.75rem;" aria-labelledby="features-heading">
+      <h2 id="features-heading" class="form-section-title">
+        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+        Features &amp; Options
+      </h2>
+      <div class="features-grid" role="list">
+        {% for feat in features %}
+        <div class="feature-item" role="listitem">
+          <i class="fa-solid fa-check" aria-hidden="true"></i>
+          {{ feat }}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Similar cars -->
+    {% if similar %}
+    <section style="margin-top: 2.5rem;" aria-labelledby="similar-heading">
+      <div class="section-heading">
+        <h2 class="section-heading__title" id="similar-heading">More {{ car.make }}s</h2>
+        <a href="{{ url_for('main.browse') }}?make={{ car.make | urlencode }}" class="section-heading__link">
+          See all <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+      </div>
+      <div class="car-grid car-grid--compact" role="list">
+        {% for similar_car in similar %}
+        <div role="listitem">{% set car = similar_car %}{% include "partials/car_card.html" %}{% set car = car %}</div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+  </div>
+
+  <!-- ── Right sidebar ──────────────────────────────────────────────── -->
+  <aside class="detail-sidebar" aria-label="Listing actions">
+
+    <!-- Action card -->
+    <div class="action-card">
+      <div class="action-card__header">
+        <div>
+          <div class="action-card__price-big">{{ format_price(car.price) }}</div>
+          {% if car.has_price_drop %}
+          <div class="action-card__price-orig">Was {{ format_price(car.original_price) }}</div>
+          {% endif %}
+        </div>
+        <!-- Favorite -->
+        {% if current_user.is_authenticated %}
+        <button
+          class="car-card__fav {% if is_favorited %}active{% endif %}"
+          data-fav-id="{{ car.id }}"
+          style="position:static; width:40px; height:40px; background: rgba(255,255,255,.1); color: {% if is_favorited %}var(--red-300){% else %}rgba(255,255,255,.6){% endif %};"
+          aria-label="{{ 'Remove from saved' if is_favorited else 'Save this car' }}"
+          aria-pressed="{{ 'true' if is_favorited else 'false' }}"
+        >
+          <i class="{% if is_favorited %}fa-solid{% else %}fa-regular{% endif %} fa-heart" aria-hidden="true"></i>
+        </button>
+        {% endif %}
+      </div>
+
+      <div class="action-card__body">
+        <div class="action-card__stat-row">
+          <div class="action-card__stat">
+            <div class="action-card__stat-val">{{ format_mileage(car.mileage) }}</div>
+            <div class="action-card__stat-lbl">Mileage</div>
+          </div>
+          <div class="action-card__stat">
+            <div class="action-card__stat-val">{{ car.year }}</div>
+            <div class="action-card__stat-lbl">Year</div>
+          </div>
+          <div class="action-card__stat">
+            <div class="action-card__stat-val">{{ car.days_listed }}d</div>
+            <div class="action-card__stat-lbl">Listed</div>
+          </div>
+        </div>
+
+        <!-- Owner controls -->
+        {% if current_user.is_authenticated and (current_user.id == car.seller_id or current_user.is_admin) %}
+        <div style="display: flex; flex-direction: column; gap: .5rem; padding-top: .25rem; border-top: 1px solid var(--border);">
+          <a href="{{ url_for('listings.edit_listing', car_id=car.id) }}" class="btn-ghost" style="justify-content: center;">
+            <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit Listing
+          </a>
+          <form action="{{ url_for('listings.mark_sold', car_id=car.id) }}" method="post" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn-ghost btn-primary--block" style="justify-content: center; width:100%;">
+              <i class="fa-solid fa-handshake" aria-hidden="true"></i> Mark as Sold
+            </button>
+          </form>
+          <form action="{{ url_for('listings.delete_listing', car_id=car.id) }}" method="post" style="margin:0;"
+            onsubmit="return confirm('Delete this listing permanently?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn-ghost btn-danger btn-primary--block" style="justify-content: center; width:100%;">
+              <i class="fa-solid fa-trash" aria-hidden="true"></i> Delete Listing
+            </button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Payment calculator -->
+    <div class="calc-section" aria-labelledby="calc-heading">
+      <h2 class="calc-title" id="calc-heading">
+        <i class="fa-solid fa-calculator" aria-hidden="true"></i>
+        Monthly Payment
+      </h2>
+
+      <div class="form-group">
+        <label class="form-label" for="calc-down">Down Payment ($)</label>
+        <input type="number" id="calc-down" class="form-control" value="3000" min="0" step="500" aria-describedby="calc-result" />
+      </div>
+      <div class="form-group" style="margin-top: .625rem;">
+        <label class="form-label" for="calc-apr">APR (%)</label>
+        <input type="number" id="calc-apr" class="form-control" value="6.9" min="0" max="30" step="0.1" />
+      </div>
+      <div class="form-group" style="margin-top: .625rem;">
+        <label class="form-label" for="calc-term">Loan Term</label>
+        <select id="calc-term" class="form-control">
+          <option value="24">24 months</option>
+          <option value="36">36 months</option>
+          <option value="48">48 months</option>
+          <option value="60" selected>60 months</option>
+          <option value="72">72 months</option>
+          <option value="84">84 months</option>
+        </select>
+      </div>
+
+      <div class="calc-result" id="calc-result" aria-live="polite" aria-atomic="true">
+        <div class="calc-monthly" id="calc-output">—</div>
+        <div class="calc-monthly-lbl">estimated per month</div>
+      </div>
+      <p style="font-size:.7rem; color: var(--text-muted); margin-top: .5rem; line-height:1.4;">
+        Estimate only. Actual rates depend on credit score and lender.
+      </p>
+    </div>
+
+    <!-- Seller card -->
+    <div class="seller-card" aria-labelledby="seller-heading">
+      <h2 class="form-section-title" id="seller-heading" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+        <i class="fa-solid fa-user" aria-hidden="true"></i>
+        About the Seller
+      </h2>
+
+      <div class="seller-card__profile">
+        <div class="seller-card__avatar">
+          {% if seller.avatar_url %}
+          <img src="{{ seller.avatar_url }}" alt="{{ seller.name }}" loading="lazy" />
+          {% else %}
+          <span class="seller-card__avatar-initials">{{ seller.name[0].upper() }}</span>
+          {% endif %}
+        </div>
+        <div class="seller-card__info">
+          <div class="seller-card__name">
+            <a href="{{ url_for('main.seller_profile', user_id=seller.id) }}" style="text-decoration:none; color:inherit;">
+              {{ seller.name }}
+            </a>
+          </div>
+          <div class="seller-card__meta">
+            {% if seller.location %}
+            <span><i class="fa-solid fa-location-dot" aria-hidden="true"></i> {{ seller.location }}</span>
+            {% endif %}
+            <span>Member since {{ seller.created_at.strftime('%b %Y') if seller.created_at else '' }}</span>
+          </div>
+          {% if seller.is_verified %}
+          <span class="seller-card__verified">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Verified Seller
+          </span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if seller.avg_rating %}
+      <div class="seller-card__rating" aria-label="Seller rating {{ seller.avg_rating }} out of 5">
+        <span class="stars" aria-hidden="true">
+          {% for i in range(1, 6) %}{{ '★' if i <= seller.avg_rating | round else '☆' }}{% endfor %}
+        </span>
+        <span style="font-size: .8rem; color: var(--text-secondary);">{{ seller.avg_rating }}</span>
+      </div>
+      {% endif %}
+
+      {% if seller.bio %}
+      <p style="font-size: .8375rem; color: var(--text-secondary); line-height: 1.55;">{{ seller.bio | truncate(140) }}</p>
+      {% endif %}
+
+      <div class="seller-card__stats" aria-label="Seller statistics">
+        <div class="seller-stat">
+          <span class="seller-stat__val">{{ seller.listings.filter_by(status='active').count() }}</span>
+          <span class="seller-stat__lbl">Active</span>
+        </div>
+        <div class="seller-stat">
+          <span class="seller-stat__val">{{ seller.listings.filter_by(status='sold').count() }}</span>
+          <span class="seller-stat__lbl">Sold</span>
+        </div>
+        <div class="seller-stat">
+          <span class="seller-stat__val">{{ seller.avg_rating or '—' }}</span>
+          <span class="seller-stat__lbl">Rating</span>
+        </div>
+      </div>
+
+      <a href="{{ url_for('main.seller_profile', user_id=seller.id) }}" class="btn-ghost" style="width:100%; justify-content: center; margin-top: .25rem;">
+        View All Listings
+      </a>
+    </div>
+
+    <!-- Message form -->
+    {% if current_user.is_authenticated and current_user.id != car.seller_id %}
+    <div class="msg-form-card" aria-labelledby="msg-heading">
+      <div class="msg-form-header">
+        <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+        <span id="msg-heading">Message Seller</span>
+      </div>
+      <form class="msg-form-body" action="{{ url_for('messages.send_message') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input type="hidden" name="car_id" value="{{ car.id }}" />
+        <input type="hidden" name="receiver_id" value="{{ seller.id }}" />
+        <div class="form-group">
+          <label class="form-label" for="msg-content">Your message <span class="required" aria-hidden="true">*</span></label>
+          <textarea
+            id="msg-content"
+            name="content"
+            class="form-control"
+            rows="4"
+            placeholder="Hi, I'm interested in this {{ car.year }} {{ car.make }} {{ car.model }}. Is it still available?"
+            required
+            maxlength="2000"
+            aria-required="true"
+          ></textarea>
+        </div>
+        <button type="submit" class="btn-primary btn-primary--block">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+          Send Message
+        </button>
+      </form>
+    </div>
+
+    {% elif not current_user.is_authenticated %}
+    <div style="text-align: center; padding: 1.25rem; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-xl);">
+      <p style="font-size: .875rem; color: var(--text-secondary); margin-bottom: .875rem;">Sign in to message the seller.</p>
+      <a href="{{ url_for('auth.login') }}?next={{ request.url | urlencode }}" class="btn-primary btn-primary--block">
+        Sign In to Message
+      </a>
+    </div>
+    {% endif %}
+
+    <!-- Share -->
+    <div style="display: flex; gap: .5rem; flex-wrap: wrap;">
+      <button class="btn-ghost" style="flex:1; justify-content:center;" onclick="copyLink()" aria-label="Copy listing link">
+        <i class="fa-solid fa-link" aria-hidden="true"></i> Copy Link
+      </button>
+      <a
+        href="https://twitter.com/intent/tweet?url={{ request.url | urlencode }}&text={{ (car.year | string + ' ' + car.make + ' ' + car.model + ' for ' + format_price(car.price)) | urlencode }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="btn-ghost"
+        style="flex:1; justify-content:center;"
+        aria-label="Share on X (Twitter)"
+      >
+        <i class="fa-brands fa-x-twitter" aria-hidden="true"></i> Share
+      </a>
+    </div>
+
+  </aside>
+</div>
+
+<!-- Lightbox (simple full-screen) -->
+<div id="lightbox" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:800; align-items:center; justify-content:center;" role="dialog" aria-label="Photo lightbox" aria-modal="true">
+  <button onclick="closeLightbox()" style="position:absolute; top:1rem; right:1rem; color:#fff; font-size:1.5rem; background:none; border:none; cursor:pointer;" aria-label="Close lightbox">
+    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+  </button>
+  <img id="lightbox-img" src="" alt="Full size vehicle photo" style="max-width:90vw; max-height:90vh; border-radius: var(--radius-lg); object-fit:contain;" />
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/image_gallery.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/calculator.js') }}" defer></script>
+<script>
+  /* Pass car price to calculator */
+  window.CAR_PRICE_CENTS = {{ car.price | int }};
+
+  /* ── Gallery images array ── */
+  window.GALLERY_IMAGES = [
+    {% for url in all_images %}"{{ url }}"{% if not loop.last %},{% endif %}{% endfor %}
+  ];
+
+  /* ── Copy link ── */
+  function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const btn = event.currentTarget;
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> Copied!';
+      setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    });
+  }
+
+  /* ── Lightbox ── */
+  function openLightbox(src) {
+    const lb = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    lb.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  document.getElementById('gallery-main')?.addEventListener('click', () => {
+    const img = document.getElementById('gallery-main-img');
+    if (img) openLightbox(img.src);
+  });
+  document.getElementById('lightbox')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeLightbox();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  /* ── AI assistant context injection ── */
+  window.AI_CAR_CONTEXT = {
+    year:         {{ car.year }},
+    make:         "{{ car.make }}",
+    model:        "{{ car.model }}",
+    trim:         "{{ car.trim or '' }}",
+    price:        "{{ format_price(car.price) }}",
+    mileage:      "{{ format_mileage(car.mileage) }}",
+    condition:    "{{ car.condition }}",
+    fuel_type:    "{{ car.fuel_type }}",
+    transmission: "{{ car.transmission }}",
+    body_type:    "{{ car.body_type }}",
+    city:         "{{ car.city }}",
+    state:        "{{ car.state }}",
+  };
+</script>
+{% endblock %}

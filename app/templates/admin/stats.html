@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Admin — Statistics{% endblock %}
+{% block body_class %}page-admin{% endblock %}
+
+{% block extra_css %}
+<style>
+  .admin-layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - var(--nav-h));
+  }
+  .admin-sidebar {
+    background: var(--stone-900);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: var(--nav-h);
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .admin-sidebar__brand {
+    padding: 0 1.25rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    margin-bottom: .75rem;
+    font-size: .75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--stone-500);
+  }
+  .admin-nav-label {
+    font-size: .65rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .1em;
+    color: var(--stone-600);
+    padding: .625rem 1.25rem .2rem;
+  }
+  .admin-nav-link {
+    display: flex; align-items: center; gap: .625rem;
+    padding: .55rem 1.25rem;
+    font-size: .8375rem; font-weight: 500;
+    color: var(--stone-400); text-decoration: none;
+    border-left: 3px solid transparent;
+    transition: background var(--dur-fast), color var(--dur-fast);
+  }
+  .admin-nav-link:hover { background: rgba(255,255,255,.06); color: var(--stone-200); }
+  .admin-nav-link.active { background: rgba(185,28,28,.15); color: var(--red-400); border-left-color: var(--brand); }
+  .admin-nav-link i { width: 16px; text-align: center; }
+  .admin-main { padding: 2rem clamp(1.25rem, 3vw, 2.5rem); }
+
+  .stats-section-title {
+    font-family: var(--font-display);
+    font-size: 1rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 1rem; margin-top: 2rem;
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .stats-section-title i { font-size: .875rem; }
+
+  .bar-chart { display: flex; flex-direction: column; gap: .625rem; }
+  .bar-row { display: flex; align-items: center; gap: .875rem; }
+  .bar-label { font-size: .8125rem; font-weight: 600; width: 140px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 12px; background: var(--bg-muted); border-radius: var(--radius-full); overflow: hidden; }
+  .bar-fill  { height: 100%; border-radius: var(--radius-full); transition: width .6s var(--ease-out); }
+  .bar-fill--red   { background: var(--brand); }
+  .bar-fill--blue  { background: var(--info); }
+  .bar-fill--green { background: var(--success); }
+  .bar-count { font-size: .8rem; font-weight: 700; color: var(--text-secondary); width: 36px; text-align: right; flex-shrink: 0; }
+
+  .price-bucket-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+  .price-bucket-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .price-bucket-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--brand);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .price-bucket-val {
+    font-family: var(--font-display);
+    font-size: 2rem; font-weight: 800;
+    color: var(--text-primary); line-height: 1;
+  }
+  .price-bucket-lbl {
+    font-size: .78rem; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: .05em;
+    margin-top: .25rem;
+  }
+
+  @media (max-width: 1024px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar {
+      position: static; height: auto;
+      flex-direction: row; flex-wrap: wrap;
+      padding: .75rem 1rem; gap: .25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .admin-sidebar__brand, .admin-nav-label { display: none; }
+    .admin-nav-link { padding: .4rem .75rem; border-left: none; border-radius: var(--radius-full); font-size: .8rem; }
+    .admin-nav-link.active { border-left: none; }
+    .bar-label { width: 100px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <aside class="admin-sidebar" aria-label="Admin navigation">
+    <div class="admin-sidebar__brand">Admin Panel</div>
+    <span class="admin-nav-label">Overview</span>
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-nav-link">
+      <i class="fa-solid fa-gauge-high" aria-hidden="true"></i> Dashboard
+    </a>
+    <a href="{{ url_for('admin.stats') }}" class="admin-nav-link active">
+      <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Statistics
+    </a>
+    <span class="admin-nav-label">Manage</span>
+    <a href="{{ url_for('admin.users') }}" class="admin-nav-link">
+      <i class="fa-solid fa-users" aria-hidden="true"></i> Users
+    </a>
+    <a href="{{ url_for('admin.listings') }}" class="admin-nav-link">
+      <i class="fa-solid fa-list" aria-hidden="true"></i> Listings
+    </a>
+    <span class="admin-nav-label" style="margin-top:.5rem;">Site</span>
+    <a href="{{ url_for('main.index') }}" class="admin-nav-link">
+      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Back to Site
+    </a>
+    <a href="{{ url_for('auth.logout') }}" class="admin-nav-link" style="color:var(--red-400);">
+      <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+    </a>
+  </aside>
+
+  <div class="admin-main">
+    <h1 style="font-size:clamp(1.375rem,3vw,1.875rem); font-weight:800; margin-bottom:.375rem;">
+      Platform Statistics
+    </h1>
+    <p style="color:var(--text-secondary); font-size:.875rem; margin-bottom:0;">
+      Breakdown of active listings across all categories.
+    </p>
+
+    <!-- Body type breakdown -->
+    {% if by_body %}
+    <div class="stats-section-title">
+      <i class="fa-solid fa-car" aria-hidden="true"></i> Listings by Body Type
+    </div>
+    {% set max_body = by_body | map(attribute=1) | max %}
+    <div class="bar-chart" aria-label="Body type breakdown">
+      {% for body, cnt in by_body | sort(attribute=1, reverse=True) %}
+      <div class="bar-row">
+        <span class="bar-label">{{ body }}</span>
+        <div class="bar-track">
+          <div class="bar-fill bar-fill--red"
+               style="width: {{ (cnt / max_body * 100) | round }}%;"
+               role="progressbar"
+               aria-valuenow="{{ cnt }}"
+               aria-valuemin="0"
+               aria-valuemax="{{ max_body }}"></div>
+        </div>
+        <span class="bar-count">{{ cnt }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Fuel type breakdown -->
+    {% if by_fuel %}
+    <div class="stats-section-title">
+      <i class="fa-solid fa-gas-pump" aria-hidden="true"></i> Listings by Fuel Type
+    </div>
+    {% set max_fuel = by_fuel | map(attribute=1) | max %}
+    <div class="bar-chart" aria-label="Fuel type breakdown">
+      {% for fuel, cnt in by_fuel | sort(attribute=1, reverse=True) %}
+      <div class="bar-row">
+        <span class="bar-label">{{ fuel }}</span>
+        <div class="bar-track">
+          <div class="bar-fill bar-fill--blue"
+               style="width: {{ (cnt / max_fuel * 100) | round }}%;"
+               role="progressbar"
+               aria-valuenow="{{ cnt }}"
+               aria-valuemin="0"
+               aria-valuemax="{{ max_fuel }}"></div>
+        </div>
+        <span class="bar-count">{{ cnt }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Price distribution -->
+    {% if price_buckets %}
+    <div class="stats-section-title">
+      <i class="fa-solid fa-dollar-sign" aria-hidden="true"></i> Price Distribution
+    </div>
+    <div class="price-bucket-grid" role="list" aria-label="Price distribution">
+      {% for label, count in price_buckets %}
+      <div class="price-bucket-card" role="listitem">
+        <div class="price-bucket-val">{{ count }}</div>
+        <div class="price-bucket-lbl">{{ label }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

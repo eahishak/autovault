@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Cars{% endblock %}
+{% block meta_description %}Compare up to 3 vehicles side by side — price, mileage, specs, and features.{% endblock %}
+
+{% block body_class %}page-compare{% endblock %}
+
+{% block extra_css %}
+<style>
+  .compare-page {
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;
+  }
+
+  .compare-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .compare-page-title { font-size: clamp(1.375rem, 3vw, 1.875rem); font-weight: 800; }
+  .compare-page-sub   { color: var(--text-secondary); font-size: .875rem; margin-top: .2rem; }
+
+  /* Comparison table */
+  .compare-table-wrap { overflow-x: auto; }
+
+  .compare-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background: var(--bg-elevated);
+  }
+
+  .compare-table thead th { background: var(--bg-subtle); border-bottom: 1px solid var(--border); }
+  .compare-table tbody tr:last-child td { border-bottom: none; }
+  .compare-table tbody tr:nth-child(even) td { background: var(--bg-subtle); }
+  .compare-table tbody tr:hover td { background: var(--bg-muted); }
+
+  /* Label column */
+  .compare-table .col-label {
+    width: 160px;
+    min-width: 140px;
+    padding: .75rem 1.125rem;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+    border-right: 1px solid var(--border);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  /* Car columns */
+  .compare-col {
+    vertical-align: top;
+    border-right: 1px solid var(--border);
+    min-width: 240px;
+  }
+  .compare-col:last-child { border-right: none; }
+
+  .compare-car-header {
+    padding: 1.25rem 1.25rem 1rem;
+    position: relative;
+    min-height: 220px;
+  }
+
+  .compare-car-img {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: var(--radius-lg);
+    display: block;
+    background: var(--bg-muted);
+    margin-bottom: .875rem;
+  }
+
+  .compare-car-img-placeholder {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: var(--bg-muted);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 2rem;
+    margin-bottom: .875rem;
+  }
+
+  .compare-car-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: .25rem;
+  }
+  .compare-car-name a { text-decoration: none; color: inherit; }
+  .compare-car-name a:hover { color: var(--brand); }
+
+  .compare-car-price {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 800;
+    color: var(--brand);
+    margin-bottom: .5rem;
+  }
+
+  .compare-remove-btn {
+    position: absolute;
+    top: .75rem;
+    right: .75rem;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.5);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    cursor: pointer;
+    border: none;
+    transition: background var(--dur-fast);
+  }
+  .compare-remove-btn:hover { background: var(--danger); }
+
+  /* Data cells */
+  .compare-table tbody td {
+    padding: .6875rem 1.25rem;
+    font-size: .875rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  /* Highlight classes injected by compare.js */
+  .compare-best {
+    color: var(--success) !important;
+    font-weight: 700 !important;
+  }
+  .compare-best::after {
+    content: ' ✓';
+    font-size: .7rem;
+  }
+
+  .compare-worst {
+    color: var(--text-muted) !important;
+  }
+
+  /* Winner badge */
+  .compare-winner-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .625rem;
+    background: #fef3c7;
+    color: #92400e;
+    border-radius: var(--radius-full);
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: .5rem;
+  }
+  @media (prefers-color-scheme: dark) {
+    .compare-winner-badge { background: #78350f; color: #fcd34d; }
+  }
+
+  /* Score bar */
+  .compare-score-bar {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-top: .625rem;
+  }
+  .compare-score-track {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-muted);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .compare-score-fill {
+    height: 100%;
+    background: var(--brand);
+    border-radius: 3px;
+    transition: width .6s var(--ease-out);
+  }
+  .compare-score-label {
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--brand);
+    white-space: nowrap;
+  }
+
+  /* Add car placeholder column */
+  .compare-col--add {
+    min-width: 200px;
+    text-align: center;
+  }
+  .compare-col--add .add-car-area {
+    padding: 2rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
+  }
+  .add-car-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--bg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+  }
+  .add-car-label { font-size: .8rem; color: var(--text-muted); max-width: 18ch; }
+
+  @media print {
+    .compare-remove-btn,
+    .compare-page-header .btn-ghost,
+    #compare-print-btn { display: none !important; }
+    .compare-page { padding: 0; }
+    .compare-table { border: none; }
+  }
+
+  @media (max-width: 768px) {
+    .compare-table .col-label { width: 100px; min-width: 90px; font-size: .68rem; }
+    .compare-col { min-width: 180px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compare-page">
+  <div class="compare-page-header">
+    <div>
+      <h1 class="compare-page-title">
+        <i class="fa-solid fa-scale-balanced" style="color:var(--brand);" aria-hidden="true"></i>
+        Compare Vehicles
+      </h1>
+      <p class="compare-page-sub">Side by side. Green cells win. Trophy goes to the best overall value.</p>
+    </div>
+    <div style="display:flex; gap:.625rem; flex-wrap:wrap;">
+      <button id="compare-print-btn" class="btn-ghost">
+        <i class="fa-solid fa-print" aria-hidden="true"></i> Print
+      </button>
+      <a href="{{ url_for('main.browse') }}" class="btn-ghost">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Add Car
+      </a>
+    </div>
+  </div>
+
+  {% if cars %}
+  <div class="compare-table-wrap">
+    <table class="compare-table" role="table" aria-label="Vehicle comparison">
+      <thead>
+        <tr>
+          <th class="col-label" scope="col">Spec</th>
+          {% for car in cars %}
+          <th class="compare-col" scope="col">
+            <div class="compare-car-header">
+              <button class="compare-remove-btn" data-remove-compare="{{ car.id }}" aria-label="Remove {{ car.year }} {{ car.make }} {{ car.model }} from comparison">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+              </button>
+
+              {% if car.primary_image_url %}
+              <img class="compare-car-img" src="{{ car.primary_image_url }}" alt="{{ car.year }} {{ car.make }} {{ car.model }}" loading="lazy" />
+              {% else %}
+              <div class="compare-car-img-placeholder" aria-hidden="true"><i class="fa-solid fa-car"></i></div>
+              {% endif %}
+
+              <div class="compare-car-name">
+                <a href="{{ url_for('main.car_detail', slug=car.slug) }}">
+                  {{ car.year }} {{ car.make }} {{ car.model }}
+                  {% if car.trim %}<br><span style="font-weight:400; color:var(--text-muted);">{{ car.trim }}</span>{% endif %}
+                </a>
+              </div>
+              <div class="compare-car-price">{{ format_price(car.price) }}</div>
+              <a href="{{ url_for('main.car_detail', slug=car.slug) }}" class="btn-primary btn-sm" style="width:100%; justify-content:center;">
+                View Listing
+              </a>
+            </div>
+          </th>
+          {% endfor %}
+          {% if cars | length < 3 %}
+          <th class="compare-col compare-col--add" scope="col">
+            <div class="add-car-area">
+              <div class="add-car-icon" aria-hidden="true"><i class="fa-solid fa-plus"></i></div>
+              <p class="add-car-label">Add another car to compare</p>
+              <a href="{{ url_for('main.browse') }}" class="btn-ghost btn-sm">Browse Cars</a>
+            </div>
+          </th>
+          {% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% set rows = [
+          ('Price',         'price',        'price_fmt'),
+          ('Mileage',       'mileage',      'mileage_fmt'),
+          ('Year',          'year',         'year'),
+          ('Condition',     'condition',    'condition'),
+          ('Body Type',     'body_type',    'body_type'),
+          ('Fuel Type',     'fuel_type',    'fuel_type'),
+          ('Transmission',  'transmission', 'transmission'),
+          ('Drivetrain',    'drivetrain',   'drivetrain'),
+          ('Engine',        'engine',       'engine'),
+          ('Horsepower',    'horsepower',   'hp_fmt'),
+          ('Ext. Color',    'ext_color',    'exterior_color'),
+          ('Location',      'location',     'location'),
+          ('Days Listed',   'days',         'days_listed'),
+          ('Listing Status','status',       'status'),
+        ] %}
+
+        {% for label, spec_key, display_key in rows %}
+        <tr>
+          <th class="col-label" scope="row">{{ label }}</th>
+          {% for car in cars %}
+          <td class="compare-col">
+            <span
+              data-spec="{{ spec_key }}"
+              data-value="{% if spec_key == 'price' %}{{ car.price }}{% elif spec_key == 'mileage' %}{{ car.mileage }}{% elif spec_key == 'year' %}{{ car.year }}{% elif spec_key == 'horsepower' %}{{ car.horsepower or '' }}{% endif %}"
+            >
+              {% if display_key == 'price_fmt' %}
+                {{ format_price(car.price) }}
+              {% elif display_key == 'mileage_fmt' %}
+                {{ format_mileage(car.mileage) }}
+              {% elif display_key == 'hp_fmt' %}
+                {% if car.horsepower %}{{ car.horsepower }} hp{% else %}&mdash;{% endif %}
+              {% elif display_key == 'location' %}
+                {{ car.city }}, {{ car.state }}
+              {% elif display_key == 'days_listed' %}
+                {{ car.days_listed }}d
+              {% else %}
+                {% set val = car[display_key] if car[display_key] is defined else '' %}
+                {% if val %}{{ val }}{% else %}&mdash;{% endif %}
+              {% endif %}
+            </span>
+          </td>
+          {% endfor %}
+          {% if cars | length < 3 %}<td class="compare-col compare-col--add"></td>{% endif %}
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i></div>
+    <h3 class="empty-state__title">No cars selected</h3>
+    <p class="empty-state__body">
+      Browse listings and use the Compare checkbox on each card to build your comparison.
+      You can compare up to 3 vehicles at once.
+    </p>
+    <a href="{{ url_for('main.browse') }}" class="btn-primary">Browse Cars</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/compare.js') }}" defer></script>
+{% endblock %}

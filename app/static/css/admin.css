@@ -1,0 +1,172 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   AutoVault — admin.css
+   Styles specific to the admin portal.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Admin body override ─────────────────────────────────────────────────── */
+body.page-admin {
+  background: var(--bg-subtle);
+}
+
+/* ── Admin data table enhancements ──────────────────────────────────────── */
+.admin-table-wrap {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .875rem;
+}
+
+.admin-table thead th {
+  padding: .75rem 1rem;
+  text-align: left;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--dur-fast);
+}
+.admin-table thead th:hover { color: var(--text-primary); }
+.admin-table thead th.sorted-asc::after  { content: ' ↑'; color: var(--brand); }
+.admin-table thead th.sorted-desc::after { content: ' ↓'; color: var(--brand); }
+
+.admin-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--dur-fast);
+}
+.admin-table tbody tr:last-child { border-bottom: none; }
+.admin-table tbody tr:hover { background: var(--bg-subtle); }
+
+.admin-table tbody td {
+  padding: .75rem 1rem;
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+/* ── Admin metric cards ──────────────────────────────────────────────────── */
+.admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.admin-metric-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.125rem 1.375rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--brand);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.admin-metric-card--blue::before   { background: var(--info); }
+.admin-metric-card--green::before  { background: var(--success); }
+.admin-metric-card--amber::before  { background: var(--warning); }
+.admin-metric-card--red::before    { background: var(--danger); }
+
+.admin-metric-card__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: var(--brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand);
+  font-size: .8rem;
+  margin-bottom: .5rem;
+}
+.admin-metric-card--blue .admin-metric-card__icon   { background: var(--info-bg);    color: var(--info);    }
+.admin-metric-card--green .admin-metric-card__icon  { background: var(--success-bg); color: var(--success); }
+.admin-metric-card--amber .admin-metric-card__icon  { background: var(--warning-bg); color: var(--warning); }
+.admin-metric-card--red .admin-metric-card__icon    { background: var(--danger-bg);  color: var(--danger);  }
+
+.admin-metric-card__value {
+  font-family: var(--font-display);
+  font-size: 1.875rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.admin-metric-card__label {
+  font-size: .72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-top: .25rem;
+}
+
+.admin-metric-card__trend {
+  font-size: .72rem;
+  font-weight: 600;
+  margin-top: .375rem;
+  display: flex;
+  align-items: center;
+  gap: .2rem;
+}
+.admin-metric-card__trend--up   { color: var(--success); }
+.admin-metric-card__trend--down { color: var(--danger);  }
+
+/* ── Quick stats row ─────────────────────────────────────────────────────── */
+.admin-quick-stats {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+
+.admin-quick-stat { display: flex; flex-direction: column; gap: .1rem; }
+.admin-quick-stat__val { font-family: var(--font-display); font-size: 1.375rem; font-weight: 800; color: var(--text-primary); }
+.admin-quick-stat__lbl { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+
+/* ── Admin alert banner ──────────────────────────────────────────────────── */
+.admin-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: .875rem;
+  padding: .875rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: .875rem;
+  margin-bottom: 1rem;
+}
+
+.admin-alert--warning { background: var(--warning-bg); color: #78350f; border: 1px solid #fde68a; }
+.admin-alert--danger  { background: var(--danger-bg);  color: #7f1d1d; border: 1px solid var(--red-200); }
+.admin-alert--info    { background: var(--info-bg);    color: #1e3a5f; border: 1px solid #bfdbfe; }
+
+.admin-alert__icon { font-size: 1rem; flex-shrink: 0; margin-top: .1rem; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .admin-metric-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-table { font-size: .8rem; }
+  .admin-table thead th,
+  .admin-table tbody td { padding: .625rem .75rem; }
+}

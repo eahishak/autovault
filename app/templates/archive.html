@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Archive{% endblock %}
+{% block meta_description %}Browse archived car listings on AutoVault. Listings older than 40 days are moved here.{% endblock %}
+
+{% block body_class %}page-archive{% endblock %}
+
+{% block content %}
+<div style="max-width: var(--container); margin-inline: auto; padding: 2rem clamp(1rem, 4vw, 2rem) 4rem;">
+
+  <div class="page-header">
+    <p class="page-header__eyebrow">Listings Archive</p>
+    <h1 class="page-header__title">Car Archive</h1>
+    <p class="page-header__subtitle">
+      Listings older than 40 days are automatically moved here. Sellers can repost any archived listing to make it active again.
+    </p>
+  </div>
+
+  {% if cars %}
+  <div class="car-grid">
+    {% for car in cars %}
+    <article class="car-card">
+      <div class="car-card__image-wrap">
+        {% if car.primary_image_url %}
+        <img
+          class="car-card__image"
+          src="{{ car.primary_image_url }}"
+          alt="{{ car.year }} {{ car.make }} {{ car.model }}"
+          loading="lazy"
+          style="filter: grayscale(30%);"
+        />
+        {% else %}
+        <div class="car-card__image-placeholder" aria-label="No image">
+          <i class="fa-solid fa-car" aria-hidden="true"></i>
+        </div>
+        {% endif %}
+
+        <div class="car-card__badges">
+          <span class="badge badge--archived">
+            <i class="fa-solid fa-box-archive" aria-hidden="true"></i> Archived
+          </span>
+        </div>
+      </div>
+
+      <div class="car-card__body">
+        <div class="car-card__title-row">
+          <a
+            href="{{ url_for('main.car_detail', slug=car.slug) if car.slug else url_for('main.car_by_id', car_id=car.id) }}"
+            class="car-card__title"
+          >
+            {{ car.year }} {{ car.make }} {{ car.model }}
+            {% if car.trim %}<span style="font-weight:400; color:var(--text-muted);">{{ car.trim }}</span>{% endif %}
+          </a>
+          <span class="car-card__price">{{ format_price(car.price) }}</span>
+        </div>
+
+        <div class="car-card__meta">
+          <span class="car-card__meta-item">
+            <i class="fa-solid fa-gauge" aria-hidden="true"></i>
+            {{ format_mileage(car.mileage) }}
+          </span>
+          <span class="car-card__meta-item">
+            <i class="fa-solid fa-gas-pump" aria-hidden="true"></i>
+            {{ car.fuel_type }}
+          </span>
+          <span class="car-card__meta-item">
+            <i class="fa-solid fa-gears" aria-hidden="true"></i>
+            {{ car.transmission }}
+          </span>
+        </div>
+
+        <!-- Archive dates -->
+        <div style="margin-top:.5rem; font-size:.78rem; color:var(--text-muted); display:flex; flex-direction:column; gap:.15rem;">
+          <span>
+            <i class="fa-solid fa-calendar-plus" aria-hidden="true"></i>
+            Listed: {{ car.created_at.strftime('%b %d, %Y') if car.created_at else '—' }}
+          </span>
+          <span>
+            <i class="fa-solid fa-box-archive" aria-hidden="true"></i>
+            Archived: {{ time_ago(car.archived_at) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="car-card__footer">
+        <span class="car-card__location">
+          <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+          {{ car.city }}{% if car.state %}, {{ car.state }}{% endif %}
+        </span>
+
+        <!-- Repost button for the owner -->
+        {% if current_user.is_authenticated and (current_user.id == car.seller_id or current_user.is_admin) %}
+        <form action="{{ url_for('listings.repost_listing', car_id=car.id) }}" method="post" style="margin:0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="tbl-btn tbl-btn--primary" style="font-size:.72rem;">
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Repost
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination.pages > 1 %}
+  <nav class="pagination" aria-label="Archive pages">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('main.archive', page=pagination.prev_num) }}" class="page-link" aria-label="Previous page">
+      <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+    </a>
+    {% else %}
+    <span class="page-link disabled" aria-disabled="true"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></span>
+    {% endif %}
+
+    {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+      {% if p %}
+      <a href="{{ url_for('main.archive', page=p) }}"
+         class="page-link {% if p == pagination.page %}active{% endif %}"
+         {% if p == pagination.page %}aria-current="page"{% endif %}>{{ p }}</a>
+      {% else %}
+      <span class="page-link disabled" aria-hidden="true">…</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+    <a href="{{ url_for('main.archive', page=pagination.next_num) }}" class="page-link" aria-label="Next page">
+      <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+    </a>
+    {% else %}
+    <span class="page-link disabled" aria-disabled="true"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></span>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state__icon"><i class="fa-solid fa-box-archive" aria-hidden="true"></i></div>
+    <h3 class="empty-state__title">Nothing archived yet</h3>
+    <p class="empty-state__body">Listings that are 40 or more days old are automatically moved here to keep the marketplace fresh.</p>
+    <a href="{{ url_for('main.browse') }}" class="btn-primary">Browse Active Listings</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

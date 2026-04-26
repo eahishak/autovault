@@ -1,0 +1,288 @@
+{
+  "cars": [
+    {
+      "make": "Toyota", "model": "Camry", "year": 2022, "trim": "XSE V6",
+      "price": 31500, "mileage": 18400, "condition": "Used",
+      "body_type": "Sedan", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "FWD", "engine": "3.5L V6", "horsepower": 301,
+      "exterior_color": "Midnight Black", "city": "Los Angeles", "state": "CA",
+      "description": "One-owner vehicle purchased new from dealership. All service records available. Accident-free. Moonroof, JBL audio, wireless CarPlay.",
+      "features": ["Moonroof", "JBL Audio", "Wireless CarPlay", "Heated Seats", "BSM"],
+      "image_url": "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&q=80&auto=format",
+      "extra_images": [
+        "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=80&auto=format",
+        "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=800&q=80&auto=format"
+      ]
+    },
+    {
+      "make": "Tesla", "model": "Model 3", "year": 2023, "trim": "Long Range AWD",
+      "price": 44900, "mileage": 9200, "condition": "Used",
+      "body_type": "Sedan", "fuel_type": "Electric", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "Dual Motor Electric", "horsepower": 358,
+      "exterior_color": "Pearl White", "city": "San Francisco", "state": "CA",
+      "description": "Nearly new Tesla Model 3 Long Range. Full self-driving capability included. Home charging setup negotiable.",
+      "features": ["Full Self-Driving", "Autopilot", "Glass Roof", "15-inch Touchscreen", "Over-the-air Updates"],
+      "image_url": "https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=800&q=80&auto=format",
+      "extra_images": [
+        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&q=80&auto=format"
+      ]
+    },
+    {
+      "make": "Ford", "model": "F-150", "year": 2021, "trim": "Lariat 4x4",
+      "price": 47200, "mileage": 32100, "condition": "Used",
+      "body_type": "Pickup Truck", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "4WD", "engine": "3.5L EcoBoost V6", "horsepower": 400,
+      "exterior_color": "Iconic Silver", "city": "Dallas", "state": "TX",
+      "description": "Loaded Lariat with FX4 Off-Road package. Tow package, spray-in bedliner, power running boards. Always garaged.",
+      "features": ["FX4 Off-Road", "Tow Package", "Spray-in Bedliner", "Power Running Boards", "B&O Audio"],
+      "image_url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "BMW", "model": "M3", "year": 2022, "trim": "Competition xDrive",
+      "price": 78500, "mileage": 12600, "condition": "Used",
+      "body_type": "Sedan", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "3.0L Twin Turbo I6", "horsepower": 503,
+      "exterior_color": "Isle of Man Green", "city": "Miami", "state": "FL",
+      "description": "Rare Isle of Man Green over black Merino leather. Carbon fiber roof, M Driver's Package. Track-ready straight from Munich.",
+      "features": ["Carbon Fiber Roof", "M Driver's Package", "Harman Kardon Audio", "M Seats", "Head-Up Display"],
+      "image_url": "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80&auto=format",
+      "extra_images": [
+        "https://images.unsplash.com/photo-1617814076668-8dfc6fe74a70?w=800&q=80&auto=format"
+      ]
+    },
+    {
+      "make": "Honda", "model": "CR-V", "year": 2023, "trim": "Sport Hybrid",
+      "price": 36400, "mileage": 5800, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Hybrid", "transmission": "CVT",
+      "drivetrain": "AWD", "engine": "2.0L Atkinson + Electric", "horsepower": 204,
+      "exterior_color": "Sonic Gray Pearl", "city": "Seattle", "state": "WA",
+      "description": "Essentially new. Purchased and barely driven. Comes with all original docs and floor mats. Fuel economy is exceptional.",
+      "features": ["Wireless CarPlay", "Honda Sensing", "Heated Front Seats", "Power Tailgate", "Panoramic Roof"],
+      "image_url": "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Porsche", "model": "911", "year": 2021, "trim": "Carrera S",
+      "price": 124000, "mileage": 8900, "condition": "Certified Pre-Owned",
+      "body_type": "Coupe", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "RWD", "engine": "3.0L Twin Turbo Flat-6", "horsepower": 443,
+      "exterior_color": "Guards Red", "city": "Scottsdale", "state": "AZ",
+      "description": "Porsche Approved Certified. PASM Sport Suspension, Sport Exhaust, Burmester Audio. Stunning Guards Red, never tracked.",
+      "features": ["PASM Sport", "Sport Exhaust", "Burmester Audio", "Sport Chrono", "Porsche Approved CPO"],
+      "image_url": "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80&auto=format",
+      "extra_images": [
+        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=800&q=80&auto=format"
+      ]
+    },
+    {
+      "make": "Chevrolet", "model": "Silverado 1500", "year": 2022, "trim": "Z71 LTZ",
+      "price": 52800, "mileage": 21500, "condition": "Used",
+      "body_type": "Pickup Truck", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "4WD", "engine": "5.3L V8", "horsepower": 355,
+      "exterior_color": "Black", "city": "Denver", "state": "CO",
+      "description": "Clean Silverado with Z71 package. Durabed, Multi-Flex tailgate, Bose audio. Never towed more than 5,000 lbs.",
+      "features": ["Z71 Off-Road", "Multi-Flex Tailgate", "Bose Audio", "Heated/Cooled Seats", "Trailer Brake Controller"],
+      "image_url": "https://images.unsplash.com/photo-1571987502905-2d429c5f9e41?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Mercedes-Benz", "model": "GLE 450", "year": 2023, "trim": "4MATIC",
+      "price": 69500, "mileage": 14200, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "3.0L Turbo I6 MHEV", "horsepower": 362,
+      "exterior_color": "Mojave Silver", "city": "Chicago", "state": "IL",
+      "description": "Stunning GLE in Mojave Silver over black. AMG Line package, Burmester surround, E-Active Body Control. Immaculate condition.",
+      "features": ["AMG Line", "Burmester Surround", "E-Active Body Control", "Massage Seats", "Head-Up Display"],
+      "image_url": "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Audi", "model": "Q5", "year": 2022, "trim": "Premium Plus quattro",
+      "price": 46200, "mileage": 27800, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "2.0L TFSI Turbo", "horsepower": 261,
+      "exterior_color": "Navarra Blue", "city": "Boston", "state": "MA",
+      "description": "Premium Plus with every box checked. Virtual Cockpit, Bang & Olufsen, panoramic sunroof. One owner, dealer maintained.",
+      "features": ["Virtual Cockpit", "Bang & Olufsen", "Panoramic Sunroof", "Matrix LED", "Adaptive Cruise"],
+      "image_url": "https://images.unsplash.com/photo-1617814076668-8dfc6fe74a70?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Jeep", "model": "Wrangler", "year": 2023, "trim": "Rubicon 392",
+      "price": 84500, "mileage": 6400, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "4WD", "engine": "6.4L HEMI V8", "horsepower": 470,
+      "exterior_color": "Sarge Green", "city": "Phoenix", "state": "AZ",
+      "description": "The ultimate Wrangler with the 392 HEMI. Sky One-Touch power top, locking diffs front and rear, 35-inch tires from factory.",
+      "features": ["Sky One-Touch Top", "Front/Rear Locking Diffs", "35-inch Factory Tires", "Rock Rails", "Alpine Audio"],
+      "image_url": "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Hyundai", "model": "Ioniq 5", "year": 2023, "trim": "Limited AWD",
+      "price": 52100, "mileage": 11300, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Electric", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "77.4 kWh Dual Motor", "horsepower": 320,
+      "exterior_color": "Gravity Gold Matte", "city": "Portland", "state": "OR",
+      "description": "Eye-catching Gravity Gold Matte. 800V ultra-fast charging, vehicle-to-load power, augmented reality HUD. Loaded Limited.",
+      "features": ["800V Ultra-Fast Charging", "Vehicle-to-Load", "AR HUD", "Relaxation Seats", "Bose Audio"],
+      "image_url": "https://images.unsplash.com/photo-1629296905540-f5167867bee5?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Dodge", "model": "Challenger", "year": 2021, "trim": "Scat Pack Widebody",
+      "price": 48900, "mileage": 19700, "condition": "Used",
+      "body_type": "Coupe", "fuel_type": "Gasoline", "transmission": "Manual",
+      "drivetrain": "RWD", "engine": "6.4L HEMI V8", "horsepower": 485,
+      "exterior_color": "Sinamon Stick Orange", "city": "Nashville", "state": "TN",
+      "description": "Head-turning Scat Pack Widebody in rare Sinamon Stick. Six-speed manual. Only weekend driver, all maintenance up to date.",
+      "features": ["Widebody Kit", "Brembo Brakes", "Harman Kardon Audio", "Launch Control", "Torque Reserve"],
+      "image_url": "https://images.unsplash.com/photo-1626668893632-6f3a4466d22f?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Toyota", "model": "Tacoma", "year": 2022, "trim": "TRD Pro",
+      "price": 51300, "mileage": 14600, "condition": "Used",
+      "body_type": "Pickup Truck", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "4WD", "engine": "3.5L V6", "horsepower": 278,
+      "exterior_color": "Lunar Rock", "city": "Salt Lake City", "state": "UT",
+      "description": "Hard to find TRD Pro in Lunar Rock. FOX shocks, skid plates, TRD Pro grille. Never taken off-road hard. Perfect condition.",
+      "features": ["FOX Shocks", "Skid Plates", "TRD Pro Grille", "Crawl Control", "Multi-Terrain Select"],
+      "image_url": "https://images.unsplash.com/photo-1565043666747-69f6646db940?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Subaru", "model": "WRX", "year": 2023, "trim": "GT",
+      "price": 38700, "mileage": 7200, "condition": "Used",
+      "body_type": "Sedan", "fuel_type": "Gasoline", "transmission": "Manual",
+      "drivetrain": "AWD", "engine": "2.4L Turbo Boxer", "horsepower": 271,
+      "exterior_color": "WR Blue Pearl", "city": "Minneapolis", "state": "MN",
+      "description": "New WRX platform in GT spec. Brembo brakes, STI Sport pedals, Recaro seats. Six-speed manual only. No mods.",
+      "features": ["Brembo Brakes", "Recaro Seats", "STI Pedals", "Harman Kardon", "EyeSight"],
+      "image_url": "https://images.unsplash.com/photo-1548702090-23e0e0e17c4f?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Kia", "model": "EV6", "year": 2023, "trim": "GT-Line AWD",
+      "price": 49200, "mileage": 8900, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Electric", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "77.4 kWh Dual Motor", "horsepower": 320,
+      "exterior_color": "Interstellar Gray", "city": "Austin", "state": "TX",
+      "description": "Sport-tuned GT-Line with 800V charging, 20-inch wheels, meridian sound. Looks and drives like a sports car.",
+      "features": ["800V Charging", "20-inch Wheels", "Meridian Audio", "HUD", "Remote Smart Parking"],
+      "image_url": "https://images.unsplash.com/photo-1666919643134-d97687c1826c?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Volkswagen", "model": "Golf GTI", "year": 2022, "trim": "Autobahn",
+      "price": 34600, "mileage": 16800, "condition": "Used",
+      "body_type": "Hatchback", "fuel_type": "Gasoline", "transmission": "Manual",
+      "drivetrain": "FWD", "engine": "2.0L TSI Turbo", "horsepower": 241,
+      "exterior_color": "Tornado Red", "city": "Philadelphia", "state": "PA",
+      "description": "The definitive hot hatch. Six-speed manual, tartan interior, Dynaudio sound. One owner, dealer serviced, never tracked.",
+      "features": ["Dynaudio Audio", "Tartan Interior", "DCC Adaptive Suspension", "Digital Cockpit Pro", "IQ.DRIVE"],
+      "image_url": "https://images.unsplash.com/photo-1541443131876-44b03de101c5?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Lexus", "model": "RX 500h", "year": 2023, "trim": "F Sport Performance",
+      "price": 72400, "mileage": 10100, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Hybrid", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "2.4L Turbo + Electric", "horsepower": 367,
+      "exterior_color": "Cloudburst Gray", "city": "Atlanta", "state": "GA",
+      "description": "First year of the new RX platform in F Sport Performance trim. Track Mode, 14-inch touchscreen, Mark Levinson reference audio.",
+      "features": ["Track Mode", "14-inch Touchscreen", "Mark Levinson Audio", "Panoramic View Monitor", "Lexus Safety+"],
+      "image_url": "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "GMC", "model": "Sierra 1500", "year": 2022, "trim": "Denali Ultimate",
+      "price": 68900, "mileage": 18300, "condition": "Used",
+      "body_type": "Pickup Truck", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "4WD", "engine": "6.2L V8", "horsepower": 420,
+      "exterior_color": "White Frost Tricoat", "city": "Houston", "state": "TX",
+      "description": "Top-of-the-line Denali Ultimate. Multicolor ProGrade trailering camera, Super Cruise hands-free driving, 13.4-inch touchscreen.",
+      "features": ["Super Cruise", "MultiPro Tailgate", "Bose Premium Audio", "Heated/Cooled/Massaging Seats", "Head-Up Display"],
+      "image_url": "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Mazda", "model": "CX-5", "year": 2023, "trim": "Carbon Edition Turbo",
+      "price": 38100, "mileage": 9400, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "2.5L Turbo", "horsepower": 256,
+      "exterior_color": "Polymetal Gray Metallic", "city": "San Diego", "state": "CA",
+      "description": "Limited Carbon Edition with unique interior. Turbocharged, leather, Bose 10-speaker. Drives closer to a sports car than an SUV.",
+      "features": ["Turbo Engine", "Carbon Edition Interior", "Bose 10-Speaker", "Ventilated Seats", "360-View Camera"],
+      "image_url": "https://images.unsplash.com/photo-1606016159991-dfe4f2746ad5?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Ford", "model": "Mustang Mach-E", "year": 2023, "trim": "GT Performance",
+      "price": 63400, "mileage": 7800, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Electric", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "Extended Range Dual Motor", "horsepower": 480,
+      "exterior_color": "Grabber Blue Metallic", "city": "Detroit", "state": "MI",
+      "description": "Quickest production Mach-E in Grabber Blue. 0-60 in 3.5s with MagneRide suspension. B&O sound, panoramic roof.",
+      "features": ["MagneRide Suspension", "B&O Sound System", "Panoramic Roof", "SYNC 4A", "Ford BlueCruise"],
+      "image_url": "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Nissan", "model": "GT-R", "year": 2020, "trim": "Premium",
+      "price": 112000, "mileage": 14200, "condition": "Used",
+      "body_type": "Coupe", "fuel_type": "Gasoline", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "3.8L Twin Turbo V6", "horsepower": 565,
+      "exterior_color": "Ultimate Stainless Silver", "city": "Las Vegas", "state": "NV",
+      "description": "Legendary Godzilla in stunning stainless silver. All stock, never tracked, garage kept. One of the last great naturally developed GT-Rs.",
+      "features": ["Bose Premium Audio", "Nappa Leather", "Carbon Ceramic Brakes Available", "Launch Control", "Pre-collision System"],
+      "image_url": "https://images.unsplash.com/photo-1580414057403-c5f451f30e1c?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Volvo", "model": "XC90", "year": 2022, "trim": "Recharge T8 Ultimate",
+      "price": 71800, "mileage": 22100, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Plug-in Hybrid", "transmission": "Automatic",
+      "drivetrain": "AWD", "engine": "2.0L Turbo + Electric", "horsepower": 455,
+      "exterior_color": "Crystal White Pearl", "city": "New York", "state": "NY",
+      "description": "Seven-seat PHEV with 35-mile electric range. Bowers & Wilkins sound, Google built-in, air suspension. Scandinavian luxury at its peak.",
+      "features": ["Bowers & Wilkins Audio", "Google Built-in", "Air Suspension", "7-Passenger", "Pilot Assist"],
+      "image_url": "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Honda", "model": "Civic Type R", "year": 2023, "trim": "Type R",
+      "price": 43200, "mileage": 4100, "condition": "Used",
+      "body_type": "Hatchback", "fuel_type": "Gasoline", "transmission": "Manual",
+      "drivetrain": "FWD", "engine": "2.0L VTEC Turbo", "horsepower": 315,
+      "exterior_color": "Championship White", "city": "Columbus", "state": "OH",
+      "description": "Most capable front-wheel-drive car ever built. Six-speed manual, Brembo brakes, Nurburgring-tuned suspension. Zero modifications.",
+      "features": ["Brembo Brakes", "Adaptive Dampers", "Rev Match", "Boost Pressure Gauge", "Alcantara Interior"],
+      "image_url": "https://images.unsplash.com/photo-1619767886558-efdc259cde1a?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Toyota", "model": "RAV4 Prime", "year": 2023, "trim": "XSE",
+      "price": 44800, "mileage": 12400, "condition": "Used",
+      "body_type": "SUV", "fuel_type": "Plug-in Hybrid", "transmission": "CVT",
+      "drivetrain": "AWD", "engine": "2.5L Atkinson + Electric", "horsepower": 302,
+      "exterior_color": "Blueprint Blue", "city": "Sacramento", "state": "CA",
+      "description": "42-mile EV range with AWD. XSE with panoramic moonroof, sport trim, heated seats. Free charging from previous owner.",
+      "features": ["42-mile EV Range", "Panoramic Moonroof", "Heated Seats", "JBL Audio", "Toyota Safety Sense 2.0"],
+      "image_url": "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&q=80&auto=format",
+      "extra_images": []
+    },
+    {
+      "make": "Cadillac", "model": "CT5-V Blackwing", "year": 2022, "trim": "Blackwing",
+      "price": 94500, "mileage": 8700, "condition": "Used",
+      "body_type": "Sedan", "fuel_type": "Gasoline", "transmission": "Manual",
+      "drivetrain": "RWD", "engine": "6.2L Supercharged V8", "horsepower": 668,
+      "exterior_color": "Rift Metallic", "city": "Detroit", "state": "MI",
+      "description": "American supersedan in rare 6-speed manual. Six hundred and sixty-eight horsepower. Magnetic Ride Control, Brembo carbon ceramics.",
+      "features": ["668hp Supercharged V8", "6-Speed Manual", "Carbon Ceramic Brakes", "Magnetic Ride Control", "Recaro Seats"],
+      "image_url": "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&q=80&auto=format",
+      "extra_images": []
+    }
+  ]
+}

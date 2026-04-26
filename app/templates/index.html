@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+
+{% block title %}AutoVault — Buy &amp; Sell Cars{% endblock %}
+
+{% block body_class %}page-home{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Hero ───────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    min-height: 580px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background: var(--stone-950);
+  }
+
+  .hero__bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(12,10,9,.92) 40%, rgba(12,10,9,.5) 100%),
+      url('https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1600&q=80&auto=format');
+    background-size: cover;
+    background-position: center 60%;
+  }
+
+  .hero__inner {
+    position: relative;
+    z-index: 1;
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: 5rem clamp(1rem, 4vw, 2rem);
+    width: 100%;
+  }
+
+  .hero__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .3rem .875rem;
+    background: rgba(185,28,28,.25);
+    border: 1px solid rgba(185,28,28,.4);
+    border-radius: var(--radius-full);
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--red-300);
+    margin-bottom: 1.25rem;
+  }
+  .hero__eyebrow i { font-size: .65rem; }
+
+  .hero__title {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -.02em;
+    color: #fff;
+    max-width: 14ch;
+    margin-bottom: 1.25rem;
+  }
+  .hero__title span { color: var(--red-400); }
+
+  .hero__sub {
+    font-size: clamp(.9rem, 2vw, 1.125rem);
+    color: var(--stone-300);
+    max-width: 46ch;
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  /* Hero search */
+  .hero__search {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: var(--radius-xl);
+    padding: .75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .625rem;
+    max-width: 680px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .hero__search-main {
+    flex: 1;
+    min-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: .625rem;
+    background: var(--bg-elevated);
+    border-radius: var(--radius-md);
+    padding: .625rem 1rem;
+  }
+  .hero__search-main i { color: var(--text-muted); font-size: .875rem; flex-shrink: 0; }
+  .hero__search-main input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: .9375rem;
+    color: var(--text-primary);
+    outline: none;
+  }
+  .hero__search-main input::placeholder { color: var(--text-muted); }
+
+  .hero__search-selects {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+  }
+  .hero__search-selects select {
+    padding: .5rem .75rem;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,.08);
+    color: #fff;
+    font-size: .85rem;
+    cursor: pointer;
+    transition: border-color var(--dur-fast);
+    min-width: 110px;
+  }
+  .hero__search-selects select:focus { outline: none; border-color: rgba(185,28,28,.5); }
+  .hero__search-selects select option { color: var(--text-primary); background: var(--bg-elevated); }
+
+  .hero__search-btn {
+    padding: .625rem 1.5rem;
+    background: var(--brand);
+    color: #fff;
+    border-radius: var(--radius-md);
+    font-size: .9375rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--dur) var(--ease), transform var(--dur-fast);
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+  .hero__search-btn:hover  { background: var(--brand-hover); }
+  .hero__search-btn:active { transform: scale(.97); }
+
+  .hero__quick-links {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  .hero__quick-link {
+    display: inline-flex;
+    align-items: center;
+    gap: .375rem;
+    padding: .35rem .75rem;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.14);
+    border-radius: var(--radius-full);
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--stone-300);
+    text-decoration: none;
+    transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+  }
+  .hero__quick-link:hover { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.25); }
+
+  /* Hero stat strip */
+  .hero__stats {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    background: rgba(12,10,9,.7);
+    border-top: 1px solid rgba(255,255,255,.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .hero__stats-inner {
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: .875rem clamp(1rem, 4vw, 2rem);
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+  }
+  .hero__stat { display: flex; align-items: center; gap: .625rem; }
+  .hero__stat-val { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: #fff; }
+  .hero__stat-lbl { font-size: .75rem; color: var(--stone-400); line-height: 1.3; }
+
+  /* ── Quick filter chips ─────────────────────────────────────── */
+  .quick-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    align-items: center;
+  }
+  .quick-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem 1rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: .8375rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: border-color var(--dur-fast), color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast);
+  }
+  .quick-filter:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    background: var(--brand-light);
+    box-shadow: var(--shadow-sm);
+  }
+  .quick-filter i { font-size: .75rem; }
+
+  /* ── Makes grid ─────────────────────────────────────────────── */
+  .makes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: .75rem;
+  }
+  .make-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    padding: .875rem .625rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: .8rem;
+    font-weight: 600;
+    text-align: center;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease), box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease);
+  }
+  .make-chip:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+  .make-chip__icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius);
+    background: var(--bg-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+  }
+
+  /* ── Trust bar ──────────────────────────────────────────────── */
+  .trust-bar {
+    background: var(--stone-900);
+    color: var(--stone-300);
+    padding: 2.25rem clamp(1rem, 4vw, 2rem);
+  }
+  .trust-bar-inner {
+    max-width: var(--container);
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+  }
+  .trust-item { display: flex; align-items: flex-start; gap: .875rem; }
+  .trust-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: rgba(185,28,28,.2);
+    border: 1px solid rgba(185,28,28,.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--red-400);
+    font-size: 1.125rem;
+    flex-shrink: 0;
+  }
+  .trust-title { font-size: .9375rem; font-weight: 700; color: #fff; margin-bottom: .2rem; }
+  .trust-body  { font-size: .8rem; color: var(--stone-500); line-height: 1.5; }
+
+  @media (max-width: 768px) {
+    .hero { min-height: 480px; }
+    .hero__search { flex-direction: column; }
+    .hero__search-selects { width: 100%; }
+    .hero__search-selects select { flex: 1; min-width: 0; }
+    .hero__stats-inner { gap: 1.25rem; }
+    .makes-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+<section class="hero" aria-label="AutoVault hero">
+  <div class="hero__bg" aria-hidden="true"></div>
+
+  <div class="hero__inner">
+    <div class="hero__eyebrow">
+      <i class="fa-solid fa-bolt" aria-hidden="true"></i>
+      {{ stats.total_active | default(0) | int }} active listings right now
+    </div>
+
+    <h1 class="hero__title">
+      Find Your<br><span>Perfect</span><br>Drive.
+    </h1>
+
+    <p class="hero__sub">
+      Browse thousands of new and used vehicles from verified sellers.
+      Filter by everything. Message sellers directly. Drive away confident.
+    </p>
+
+    <!-- Hero search form -->
+    <form class="hero__search" action="{{ url_for('main.browse') }}" method="get" role="search" aria-label="Car search">
+      <div class="hero__search-main">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input
+          type="search"
+          name="q"
+          placeholder="Make, model, or keyword…"
+          aria-label="Search by make, model, or keyword"
+          autocomplete="off"
+          id="hero-search-input"
+        />
+      </div>
+      <div class="hero__search-selects">
+        <select name="condition" aria-label="Condition">
+          <option value="">Any condition</option>
+          <option value="New">New</option>
+          <option value="Used">Used</option>
+          <option value="Certified Pre-Owned">Certified</option>
+        </select>
+        <select name="body_type" aria-label="Body type">
+          <option value="">Any type</option>
+          <option value="Sedan">Sedan</option>
+          <option value="SUV">SUV</option>
+          <option value="Pickup Truck">Truck</option>
+          <option value="Coupe">Coupe</option>
+          <option value="Convertible">Convertible</option>
+          <option value="Electric">Electric</option>
+        </select>
+      </div>
+      <button type="submit" class="hero__search-btn">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        Search
+      </button>
+    </form>
+
+    <div class="hero__quick-links" aria-label="Popular searches">
+      <a href="{{ url_for('main.browse') }}?fuel_type=Electric" class="hero__quick-link">
+        <i class="fa-solid fa-bolt" aria-hidden="true"></i> Electric
+      </a>
+      <a href="{{ url_for('main.browse') }}?body_type=SUV" class="hero__quick-link">
+        <i class="fa-solid fa-car" aria-hidden="true"></i> SUVs
+      </a>
+      <a href="{{ url_for('main.browse') }}?body_type=Pickup+Truck" class="hero__quick-link">
+        <i class="fa-solid fa-truck" aria-hidden="true"></i> Trucks
+      </a>
+      <a href="{{ url_for('main.browse') }}?price_max=20000" class="hero__quick-link">
+        Under $20k
+      </a>
+      <a href="{{ url_for('main.browse') }}?mileage_max=30000" class="hero__quick-link">
+        Low mileage
+      </a>
+      <a href="{{ url_for('main.browse') }}?make=Tesla" class="hero__quick-link">
+        Tesla
+      </a>
+    </div>
+  </div>
+
+  <!-- Stat strip -->
+  <div class="hero__stats" aria-label="Platform statistics">
+    <div class="hero__stats-inner">
+      <div class="hero__stat">
+        <span class="hero__stat-val">{{ stats.total_active | default(0) | int }}</span>
+        <span class="hero__stat-lbl">Active<br>listings</span>
+      </div>
+      <div class="hero__stat">
+        <span class="hero__stat-val">{{ stats.total_sellers | default(0) | int }}</span>
+        <span class="hero__stat-lbl">Verified<br>sellers</span>
+      </div>
+      <div class="hero__stat">
+        <span class="hero__stat-val">{{ stats.makes | default(0) | int }}</span>
+        <span class="hero__stat-lbl">Makes<br>available</span>
+      </div>
+      <div class="hero__stat">
+        <span class="hero__stat-val">40</span>
+        <span class="hero__stat-lbl">Day listing<br>freshness</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Quick filters ────────────────────────────────────────────────────── -->
+<section class="section section--sm" aria-labelledby="filter-heading">
+  <div class="container">
+    <div class="section-heading">
+      <h2 class="section-heading__title" id="filter-heading">Browse by Type</h2>
+    </div>
+    <div class="quick-filters" role="list">
+      {% set types = [
+        ('SUV', 'fa-car-side', 'SUV'),
+        ('Sedan', 'fa-car', 'Sedan'),
+        ('Pickup Truck', 'fa-truck-pickup', 'Truck'),
+        ('Coupe', 'fa-car', 'Coupe'),
+        ('Convertible', 'fa-car', 'Convertible'),
+        ('Hatchback', 'fa-car', 'Hatchback'),
+        ('Minivan', 'fa-shuttle-van', 'Minivan'),
+        ('Electric', 'fa-bolt', 'Electric'),
+        ('Sports Car', 'fa-gauge-high', 'Sports'),
+        ('Wagon', 'fa-car', 'Wagon'),
+      ] %}
+      {% for val, icon, label in types %}
+      <div role="listitem">
+        <a href="{{ url_for('main.browse') }}?body_type={{ val | urlencode }}" class="quick-filter">
+          <i class="fa-solid {{ icon }}" aria-hidden="true"></i>
+          {{ label }}
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ── Featured Listings ─────────────────────────────────────────────────── -->
+{% if featured %}
+<section class="section section--sm" aria-labelledby="featured-heading">
+  <div class="container">
+    <div class="section-heading">
+      <h2 class="section-heading__title" id="featured-heading">
+        <i class="fa-solid fa-star text-brand" aria-hidden="true"></i>
+        Featured Vehicles
+      </h2>
+      <a href="{{ url_for('main.browse') }}" class="section-heading__link">View all <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+    </div>
+
+    <div class="car-grid">
+      {% for car in featured %}
+      {% include "partials/car_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Shop by Make ──────────────────────────────────────────────────────── -->
+{% if makes %}
+<section class="section section--sm" style="background: var(--bg-subtle); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);" aria-labelledby="makes-heading">
+  <div class="container">
+    <div class="section-heading">
+      <h2 class="section-heading__title" id="makes-heading">Shop by Make</h2>
+      <a href="{{ url_for('main.browse') }}" class="section-heading__link">All makes</a>
+    </div>
+
+    <div class="makes-grid" role="list">
+      {% set make_icons = {
+        'Toyota': '🚗', 'Honda': '🚙', 'Ford': '🛻', 'Chevrolet': '🚘',
+        'BMW': '🏎', 'Mercedes-Benz': '💎', 'Audi': '⚡', 'Tesla': '⚡',
+        'Hyundai': '🚗', 'Kia': '🚙', 'Nissan': '🚗', 'Lexus': '✨',
+        'Jeep': '🏔', 'Subaru': '🌲', 'Volkswagen': '🚗', 'Porsche': '🏎',
+        'Dodge': '💨', 'Mazda': '🚗', 'Volvo': '🛡', 'GMC': '🛻',
+      } %}
+      {% for make in makes %}
+      <div role="listitem">
+        <a href="{{ url_for('main.browse') }}?make={{ make | urlencode }}" class="make-chip" aria-label="Browse {{ make }} vehicles">
+          <span class="make-chip__icon" aria-hidden="true">{{ make_icons.get(make, '🚗') }}</span>
+          {{ make }}
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ── Recent Listings ───────────────────────────────────────────────────── -->
+<section class="section section--sm" aria-labelledby="recent-heading">
+  <div class="container">
+    <div class="section-heading">
+      <h2 class="section-heading__title" id="recent-heading">Recently Added</h2>
+      <a href="{{ url_for('main.browse') }}?sort=newest" class="section-heading__link">See all <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+    </div>
+
+    {% if recent %}
+    <div class="car-grid">
+      {% for car in recent %}
+      {% include "partials/car_card.html" %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-state__icon"><i class="fa-solid fa-car" aria-hidden="true"></i></div>
+      <h3 class="empty-state__title">No listings yet</h3>
+      <p class="empty-state__body">Be the first to list a vehicle on AutoVault.</p>
+      {% if current_user.is_authenticated and current_user.is_seller %}
+      <a href="{{ url_for('listings.new_listing') }}" class="btn-primary">Post a Car</a>
+      {% else %}
+      <a href="{{ url_for('auth.register') }}" class="btn-primary">Get Started</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ── Trust bar ─────────────────────────────────────────────────────────── -->
+<div class="trust-bar" role="complementary" aria-label="Why choose AutoVault">
+  <div class="trust-bar-inner">
+    <div class="trust-item">
+      <div class="trust-icon" aria-hidden="true"><i class="fa-solid fa-shield-halved"></i></div>
+      <div>
+        <div class="trust-title">Verified Sellers</div>
+        <div class="trust-body">Every seller profile is reviewed before listing. Scammers don't make it through.</div>
+      </div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon" aria-hidden="true"><i class="fa-solid fa-envelope-open-text"></i></div>
+      <div>
+        <div class="trust-title">Direct Messaging</div>
+        <div class="trust-body">Message any seller directly inside the platform. No phone numbers required.</div>
+      </div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></div>
+      <div>
+        <div class="trust-title">Always Fresh</div>
+        <div class="trust-body">Listings older than 40 days automatically archive, keeping search results relevant.</div>
+      </div>
+    </div>
+    <div class="trust-item">
+      <div class="trust-icon" aria-hidden="true"><i class="fa-solid fa-sliders"></i></div>
+      <div>
+        <div class="trust-title">Advanced Filters</div>
+        <div class="trust-body">Filter by make, model, year, mileage, price, fuel type, location, and a dozen more attributes.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CTA banner ─────────────────────────────────────────────────────────── -->
+{% if not current_user.is_authenticated %}
+<section class="section" aria-labelledby="cta-heading">
+  <div class="container">
+    <div style="
+      background: var(--stone-900);
+      border-radius: var(--radius-xl);
+      padding: clamp(2rem, 5vw, 3.5rem);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2rem;
+      align-items: center;
+    ">
+      <div>
+        <h2 id="cta-heading" style="font-size: clamp(1.5rem, 4vw, 2.25rem); color: #fff; margin-bottom: .625rem;">
+          Ready to sell your car?
+        </h2>
+        <p style="color: var(--stone-400); max-width: 50ch;">
+          Create a free account, post your listing in minutes, and connect with buyers across the country.
+        </p>
+      </div>
+      <div style="display: flex; gap: .75rem; flex-wrap: wrap; justify-content: flex-end;">
+        <a href="{{ url_for('auth.register') }}" class="btn-primary btn-primary--lg">
+          Start Selling <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+        </a>
+        <a href="{{ url_for('main.browse') }}" class="btn-ghost" style="border-color: rgba(255,255,255,.2); color: var(--stone-300);">
+          Browse First
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  /* Hero search autocomplete pulls from the same /api/search endpoint */
+  const heroInput = document.getElementById('hero-search-input');
+  if (heroInput && window.SearchSuggest) {
+    window.SearchSuggest.attach(heroInput);
+  }
+</script>
+{% endblock %}

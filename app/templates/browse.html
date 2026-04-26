@@ -1,0 +1,573 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Cars{% endblock %}
+{% block meta_description %}Search thousands of new and used car listings. Filter by make, model, price, mileage, location, fuel type, and more.{% endblock %}
+
+{% block body_class %}page-browse{% endblock %}
+
+{% block extra_css %}
+<style>
+  .browse-page {
+    max-width: var(--container);
+    margin-inline: auto;
+    padding: 1.5rem clamp(1rem, 4vw, 2rem) 4rem;
+  }
+
+  /* Sticky filter header on mobile */
+  .filter-mobile-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .75rem 0;
+    margin-bottom: 1rem;
+  }
+  .filter-mobile-toggle {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .5rem 1rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-full);
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-elevated);
+    cursor: pointer;
+  }
+  .filter-mobile-toggle .filter-count-badge {
+    background: var(--brand);
+    color: #fff;
+    border-radius: var(--radius-full);
+    font-size: .65rem;
+    padding: 1px 6px;
+    font-weight: 700;
+  }
+
+  /* Drawer overlay */
+  .filter-drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 300;
+  }
+  .filter-drawer-overlay.open { display: block; }
+
+  .filter-drawer {
+    position: fixed;
+    top: 0;
+    left: -320px;
+    width: 300px;
+    height: 100%;
+    background: var(--bg-elevated);
+    z-index: 310;
+    overflow-y: auto;
+    transition: left var(--dur-slow) var(--ease);
+    box-shadow: var(--shadow-xl);
+  }
+  .filter-drawer.open { left: 0; }
+
+  .filter-drawer-close {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .875rem 1.125rem;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+    font-size: .9rem;
+  }
+  .filter-drawer-close button {
+    margin-left: auto;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius);
+    color: var(--text-muted);
+  }
+  .filter-drawer-close button:hover { background: var(--bg-subtle); color: var(--text-primary); }
+
+  /* Loading overlay on grid */
+  .car-grid-wrap { position: relative; min-height: 300px; }
+  .car-grid-wrap.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(var(--bg), .7);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  .car-grid-loading-spinner {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    z-index: 3;
+    font-size: 1.5rem;
+    color: var(--brand);
+  }
+  .car-grid-wrap.loading .car-grid-loading-spinner { display: block; }
+
+  @media (max-width: 1024px) {
+    .filter-mobile-bar { display: flex; }
+    .filter-sidebar { display: none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="browse-page">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <p class="page-header__eyebrow">Marketplace</p>
+    <h1 class="page-header__title">Browse Vehicles</h1>
+    <p class="page-header__subtitle">
+      {{ pagination.total }} listings available.
+      {% if args.get('q') %}Results for <strong>"{{ args.get('q') }}"</strong>.{% endif %}
+    </p>
+  </div>
+
+  <!-- Active filter chips -->
+  {% set active_filters = [] %}
+  {% if args.get('q') %}{% set _ = active_filters.append(('q', args.get('q'), 'Search: ' + args.get('q'))) %}{% endif %}
+  {% if args.get('make') %}{% set _ = active_filters.append(('make', args.get('make'), args.get('make'))) %}{% endif %}
+  {% if args.get('body_type') %}{% set _ = active_filters.append(('body_type', args.get('body_type'), args.get('body_type'))) %}{% endif %}
+  {% if args.get('fuel_type') %}{% set _ = active_filters.append(('fuel_type', args.get('fuel_type'), args.get('fuel_type'))) %}{% endif %}
+  {% if args.get('condition') %}{% set _ = active_filters.append(('condition', args.get('condition'), args.get('condition'))) %}{% endif %}
+  {% if args.get('transmission') %}{% set _ = active_filters.append(('transmission', args.get('transmission'), args.get('transmission'))) %}{% endif %}
+  {% if args.get('price_min') %}{% set _ = active_filters.append(('price_min', args.get('price_min'), 'From $' + args.get('price_min'))) %}{% endif %}
+  {% if args.get('price_max') %}{% set _ = active_filters.append(('price_max', args.get('price_max'), 'To $' + args.get('price_max'))) %}{% endif %}
+  {% if args.get('mileage_max') %}{% set _ = active_filters.append(('mileage_max', args.get('mileage_max'), 'Max ' + args.get('mileage_max') + ' mi')) %}{% endif %}
+  {% if args.get('year_min') %}{% set _ = active_filters.append(('year_min', args.get('year_min'), 'From ' + args.get('year_min'))) %}{% endif %}
+  {% if args.get('year_max') %}{% set _ = active_filters.append(('year_max', args.get('year_max'), 'To ' + args.get('year_max'))) %}{% endif %}
+
+  {% if active_filters %}
+  <div class="active-filters" role="list" aria-label="Active filters">
+    {% for key, val, label in active_filters %}
+    <span class="active-filter-chip" role="listitem">
+      {{ label }}
+      <button
+        aria-label="Remove {{ label }} filter"
+        onclick="removeFilter('{{ key }}')"
+      ><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+    </span>
+    {% endfor %}
+    <a href="{{ url_for('main.browse') }}" class="active-filter-chip" style="background: var(--stone-100); color: var(--stone-600); text-decoration: none;">
+      Clear all <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Mobile filter bar -->
+  <div class="filter-mobile-bar">
+    <button class="filter-mobile-toggle" id="mobile-filter-btn" aria-expanded="false" aria-controls="filter-drawer">
+      <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+      Filters
+      {% if active_filters %}
+      <span class="filter-count-badge">{{ active_filters | length }}</span>
+      {% endif %}
+    </button>
+    <div style="display: flex; align-items: center; gap: .5rem;">
+      <label for="sort-select-mobile" class="sr-only">Sort by</label>
+      <select class="sort-select" id="sort-select-mobile" onchange="applySort(this.value)" aria-label="Sort results">
+        <option value="newest" {% if args.get('sort','newest')=='newest' %}selected{% endif %}>Newest first</option>
+        <option value="price_asc" {% if args.get('sort')=='price_asc' %}selected{% endif %}>Price: Low to High</option>
+        <option value="price_desc" {% if args.get('sort')=='price_desc' %}selected{% endif %}>Price: High to Low</option>
+        <option value="mileage" {% if args.get('sort')=='mileage' %}selected{% endif %}>Lowest Mileage</option>
+        <option value="year_desc" {% if args.get('sort')=='year_desc' %}selected{% endif %}>Year: Newest</option>
+        <option value="year_asc" {% if args.get('sort')=='year_asc' %}selected{% endif %}>Year: Oldest</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Main browse layout -->
+  <div class="browse-layout">
+
+    <!-- ── Sidebar Filters ── -->
+    <aside class="filter-sidebar" aria-label="Filter listings" id="filter-sidebar">
+      <div class="filter-sidebar__header">
+        <span class="filter-sidebar__title">Filters</span>
+        {% if active_filters %}
+        <a href="{{ url_for('main.browse') }}" class="filter-clear-btn">Clear all</a>
+        {% endif %}
+      </div>
+      <form id="filter-form" class="filter-body" method="get" action="{{ url_for('main.browse') }}">
+        <!-- preserve sort -->
+        {% if args.get('sort') %}<input type="hidden" name="sort" value="{{ args.get('sort') }}">{% endif %}
+
+        <!-- Condition -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="true" aria-controls="fg-condition">
+            Condition <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-condition">
+            <div class="filter-check-list">
+              {% for cond in filter_opts.conditions %}
+              <label class="filter-check-item">
+                <input type="radio" name="condition" value="{{ cond }}" {% if args.get('condition') == cond %}checked{% endif %} />
+                <span>{{ cond }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Price range -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="true" aria-controls="fg-price">
+            Price <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-price">
+            <div class="filter-range">
+              <div class="filter-range__inputs">
+                <div>
+                  <label for="price-min" class="form-label" style="font-size:.7rem">Min ($)</label>
+                  <input type="number" id="price-min" name="price_min" class="form-control" placeholder="0"
+                    value="{{ args.get('price_min', '') }}" min="0" step="500" />
+                </div>
+                <div>
+                  <label for="price-max" class="form-label" style="font-size:.7rem">Max ($)</label>
+                  <input type="number" id="price-max" name="price_max" class="form-control" placeholder="Any"
+                    value="{{ args.get('price_max', '') }}" min="0" step="500" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Make -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="true" aria-controls="fg-make">
+            Make <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-make">
+            <div class="filter-check-list">
+              {% for make in filter_opts.makes %}
+              <label class="filter-check-item">
+                <input type="radio" name="make" value="{{ make }}" {% if args.get('make') == make %}checked{% endif %} />
+                <span>{{ make }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Year -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="false" aria-controls="fg-year">
+            Year <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-year" hidden>
+            <div class="filter-range__inputs">
+              <div>
+                <label for="year-min" class="form-label" style="font-size:.7rem">From</label>
+                <input type="number" id="year-min" name="year_min" class="form-control"
+                  placeholder="{{ year_range[0] or 2000 }}"
+                  value="{{ args.get('year_min', '') }}" min="1990" max="2025" />
+              </div>
+              <div>
+                <label for="year-max" class="form-label" style="font-size:.7rem">To</label>
+                <input type="number" id="year-max" name="year_max" class="form-control"
+                  placeholder="{{ year_range[1] or 2024 }}"
+                  value="{{ args.get('year_max', '') }}" min="1990" max="2025" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mileage -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="false" aria-controls="fg-mileage">
+            Mileage <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-mileage" hidden>
+            <label for="mileage-max" class="form-label" style="font-size:.7rem">Max mileage</label>
+            <input type="number" id="mileage-max" name="mileage_max" class="form-control"
+              placeholder="Any" value="{{ args.get('mileage_max', '') }}" min="0" step="5000" />
+          </div>
+        </div>
+
+        <!-- Body type -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="false" aria-controls="fg-body">
+            Body Type <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-body" hidden>
+            <div class="filter-check-list">
+              {% for bt in filter_opts.body_types %}
+              <label class="filter-check-item">
+                <input type="radio" name="body_type" value="{{ bt }}" {% if args.get('body_type') == bt %}checked{% endif %} />
+                <span>{{ bt }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Fuel type -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="false" aria-controls="fg-fuel">
+            Fuel Type <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-fuel" hidden>
+            <div class="filter-check-list">
+              {% for ft in filter_opts.fuel_types %}
+              <label class="filter-check-item">
+                <input type="radio" name="fuel_type" value="{{ ft }}" {% if args.get('fuel_type') == ft %}checked{% endif %} />
+                <span>{{ ft }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Transmission -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="false" aria-controls="fg-trans">
+            Transmission <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-trans" hidden>
+            <div class="filter-check-list">
+              {% for tr in filter_opts.transmissions %}
+              <label class="filter-check-item">
+                <input type="radio" name="transmission" value="{{ tr }}" {% if args.get('transmission') == tr %}checked{% endif %} />
+                <span>{{ tr }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Location -->
+        <div class="filter-group">
+          <button type="button" class="filter-group__toggle" aria-expanded="false" aria-controls="fg-location">
+            Location <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+          </button>
+          <div class="filter-group__body" id="fg-location" hidden>
+            <div class="filter-check-list">
+              {% for state in filter_opts.states %}
+              <label class="filter-check-item">
+                <input type="radio" name="state" value="{{ state }}" {% if args.get('state') == state %}checked{% endif %} />
+                <span>{{ state }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div style="padding: .875rem 1.125rem;">
+          <button type="submit" class="btn-primary btn-primary--block">
+            <i class="fa-solid fa-sliders" aria-hidden="true"></i> Apply Filters
+          </button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- ── Car grid ── -->
+    <div>
+      <!-- Toolbar -->
+      <div class="browse-toolbar">
+        <p class="browse-result-count">
+          <strong>{{ pagination.total }}</strong> vehicle{{ 's' if pagination.total != 1 else '' }} found
+        </p>
+        <div style="display: flex; align-items: center; gap: .75rem;">
+          <!-- View toggle -->
+          <div style="display: flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;">
+            <button class="tbl-btn" id="view-grid-btn" onclick="setView('grid')" style="border:none; border-radius:0;" aria-label="Grid view" aria-pressed="true">
+              <i class="fa-solid fa-grid-2" aria-hidden="true"></i>
+            </button>
+            <button class="tbl-btn" id="view-list-btn" onclick="setView('list')" style="border:none; border-radius:0; border-left: 1px solid var(--border);" aria-label="List view" aria-pressed="false">
+              <i class="fa-solid fa-list" aria-hidden="true"></i>
+            </button>
+          </div>
+          <label for="sort-select-desktop" class="sr-only">Sort by</label>
+          <select class="sort-select" id="sort-select-desktop" onchange="applySort(this.value)" aria-label="Sort results">
+            <option value="newest" {% if args.get('sort','newest')=='newest' %}selected{% endif %}>Newest first</option>
+            <option value="price_asc" {% if args.get('sort')=='price_asc' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_desc" {% if args.get('sort')=='price_desc' %}selected{% endif %}>Price: High to Low</option>
+            <option value="mileage" {% if args.get('sort')=='mileage' %}selected{% endif %}>Lowest Mileage</option>
+            <option value="year_desc" {% if args.get('sort')=='year_desc' %}selected{% endif %}>Year: Newest</option>
+            <option value="year_asc" {% if args.get('sort')=='year_asc' %}selected{% endif %}>Year: Oldest</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Car grid -->
+      <div class="car-grid-wrap" id="car-grid-wrap">
+        <div class="car-grid-loading-spinner" aria-live="polite" aria-label="Loading results">
+          <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+        </div>
+
+        {% if cars %}
+        <div class="car-grid" id="car-grid" role="list" aria-label="Car listings">
+          {% for car in cars %}
+          <div role="listitem">{% include "partials/car_card.html" %}</div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-state__icon"><i class="fa-solid fa-car-burst" aria-hidden="true"></i></div>
+          <h3 class="empty-state__title">No results found</h3>
+          <p class="empty-state__body">Try adjusting your filters or searching for a different term.</p>
+          <a href="{{ url_for('main.browse') }}" class="btn-primary">Clear All Filters</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Pagination -->
+      {% if pagination.pages > 1 %}
+      <nav class="pagination" aria-label="Listing pages">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('main.browse', page=pagination.prev_num, **page_args) }}" class="page-link" aria-label="Previous page">
+          <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        </a>
+        {% else %}
+        <span class="page-link disabled" aria-disabled="true"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></span>
+        {% endif %}
+
+        {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+          {% if p %}
+          <a href="{{ url_for('main.browse', page=p, **page_args) }}"
+             class="page-link {% if p == pagination.page %}active{% endif %}"
+             {% if p == pagination.page %}aria-current="page"{% endif %}>
+            {{ p }}
+          </a>
+          {% else %}
+          <span class="page-link disabled" aria-hidden="true">…</span>
+          {% endif %}
+        {% endfor %}
+
+        {% if pagination.has_next %}
+        <a href="{{ url_for('main.browse', page=pagination.next_num, **page_args) }}" class="page-link" aria-label="Next page">
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </a>
+        {% else %}
+        <span class="page-link disabled" aria-disabled="true"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></span>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Mobile filter drawer -->
+<div class="filter-drawer-overlay" id="filter-overlay" aria-hidden="true"></div>
+<div class="filter-drawer" id="filter-drawer" role="dialog" aria-label="Filters" aria-modal="true">
+  <div class="filter-drawer-close">
+    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+    <span>Filters</span>
+    <button id="filter-drawer-close" aria-label="Close filters">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  <!-- Same form, cloned via JS -->
+  <div id="filter-drawer-body"></div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/filters.js') }}" defer></script>
+<script>
+  /* ── Filter accordion ── */
+  document.querySelectorAll('.filter-group__toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      const bodyId = btn.getAttribute('aria-controls');
+      const body = document.getElementById(bodyId);
+      btn.setAttribute('aria-expanded', String(!expanded));
+      if (body) body.hidden = expanded;
+    });
+  });
+
+  /* ── Sort redirect ── */
+  function applySort(val) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('sort', val);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  }
+
+  /* ── Remove individual filter ── */
+  function removeFilter(key) {
+    const url = new URL(window.location.href);
+    url.searchParams.delete(key);
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  }
+
+  /* ── Grid / list toggle ── */
+  function setView(mode) {
+    const grid = document.getElementById('car-grid');
+    const gBtn = document.getElementById('view-grid-btn');
+    const lBtn = document.getElementById('view-list-btn');
+    if (!grid) return;
+    grid.classList.toggle('car-grid--list', mode === 'list');
+    gBtn.setAttribute('aria-pressed', String(mode === 'grid'));
+    lBtn.setAttribute('aria-pressed', String(mode === 'list'));
+    localStorage.setItem('av_view', mode);
+  }
+
+  /* Restore saved view preference */
+  const savedView = localStorage.getItem('av_view');
+  if (savedView) setView(savedView);
+
+  /* ── Mobile filter drawer ── */
+  const mobileFilterBtn = document.getElementById('mobile-filter-btn');
+  const filterDrawer    = document.getElementById('filter-drawer');
+  const filterOverlay   = document.getElementById('filter-overlay');
+  const drawerCloseBtn  = document.getElementById('filter-drawer-close');
+  const drawerBody      = document.getElementById('filter-drawer-body');
+
+  /* Clone the sidebar form into the drawer on first open */
+  let drawerCloned = false;
+  function openDrawer() {
+    if (!drawerCloned) {
+      const sidebar = document.getElementById('filter-sidebar');
+      if (sidebar) {
+        drawerBody.innerHTML = sidebar.querySelector('.filter-body').outerHTML;
+        drawerCloned = true;
+      }
+    }
+    filterDrawer.classList.add('open');
+    filterOverlay.classList.add('open');
+    mobileFilterBtn.setAttribute('aria-expanded', 'true');
+    filterOverlay.removeAttribute('aria-hidden');
+    drawerCloseBtn.focus();
+  }
+
+  function closeDrawer() {
+    filterDrawer.classList.remove('open');
+    filterOverlay.classList.remove('open');
+    mobileFilterBtn.setAttribute('aria-expanded', 'false');
+    filterOverlay.setAttribute('aria-hidden', 'true');
+    mobileFilterBtn.focus();
+  }
+
+  if (mobileFilterBtn) mobileFilterBtn.addEventListener('click', openDrawer);
+  if (drawerCloseBtn)  drawerCloseBtn.addEventListener('click', closeDrawer);
+  if (filterOverlay)   filterOverlay.addEventListener('click', closeDrawer);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && filterDrawer.classList.contains('open')) closeDrawer();
+  });
+
+  /* ── Live AJAX filtering (debounced 400ms) ── */
+  let filterTimer = null;
+  document.getElementById('filter-form')?.addEventListener('change', () => {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(() => {
+      const wrap = document.getElementById('car-grid-wrap');
+      if (wrap) wrap.classList.add('loading');
+      document.getElementById('filter-form').submit();
+    }, 400);
+  });
+</script>
+{% endblock %}

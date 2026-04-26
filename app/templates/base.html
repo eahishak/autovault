@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="{% block meta_description %}AutoVault — Buy and sell new and used cars with confidence. Browse thousands of verified listings.{% endblock %}" />
+  <meta name="theme-color" content="#b91c1c" />
+
+  <title>{% block title %}AutoVault{% endblock %} — Premium Car Marketplace</title>
+
+  <!-- Open Graph -->
+  <meta property="og:site_name" content="AutoVault" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="{% block og_title %}AutoVault — Premium Car Marketplace{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}Buy and sell vehicles with confidence on AutoVault.{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/og-default.jpg') }}{% endblock %}" />
+
+  <!-- Fonts: Barlow Condensed for brand, DM Sans for body -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <!-- Core CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}" />
+  {% block extra_css %}{% endblock %}
+
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/favicon.svg') }}" />
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+  <!-- Skip to content for accessibility -->
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- ═══════════════════════════ NAVBAR ═══════════════════════════════════ -->
+  <header class="site-header" id="site-header">
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+
+      <!-- Brand -->
+      <a class="navbar-brand" href="{{ url_for('main.index') }}" aria-label="AutoVault home">
+        <span class="brand-icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="6" fill="#b91c1c"/>
+            <path d="M6 20L10 11H22L26 20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4 20H28V23C28 23.5523 27.5523 24 27 24H5C4.44772 24 4 23.5523 4 23V20Z" fill="white"/>
+            <circle cx="9" cy="22" r="2" fill="#b91c1c"/>
+            <circle cx="23" cy="22" r="2" fill="#b91c1c"/>
+            <path d="M10 16H22" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M12 13L11 16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M20 13L21 16" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="brand-name">Auto<strong>Vault</strong></span>
+      </a>
+
+      <!-- Search bar (desktop) -->
+      <div class="navbar-search" role="search">
+        <form action="{{ url_for('main.browse') }}" method="get" class="search-form" id="nav-search-form">
+          <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input
+              type="search"
+              name="q"
+              id="nav-search-input"
+              class="search-input"
+              placeholder="Search by make, model, or keyword…"
+              value="{{ request.args.get('q', '') }}"
+              autocomplete="off"
+              aria-label="Search cars"
+              aria-controls="search-suggestions"
+              aria-autocomplete="list"
+            />
+            <div class="search-suggestions" id="search-suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
+          </div>
+          <button type="submit" class="search-btn" aria-label="Search">Search</button>
+        </form>
+      </div>
+
+      <!-- Nav links -->
+      <ul class="navbar-links" role="list">
+        <li>
+          <a href="{{ url_for('main.browse') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('main.browse') %}active{% endif %}">
+            Browse
+          </a>
+        </li>
+        {% if current_user.is_authenticated and current_user.is_seller %}
+        <li>
+          <a href="{{ url_for('listings.new_listing') }}" class="nav-link nav-link--sell">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Sell a Car
+          </a>
+        </li>
+        {% endif %}
+        <li>
+          <a href="{{ url_for('main.archive') }}" class="nav-link">Archive</a>
+        </li>
+      </ul>
+
+      <!-- Right side: auth / user menu -->
+      <div class="navbar-right">
+        {% if current_user.is_authenticated %}
+
+          <!-- Notifications bell -->
+          <div class="nav-icon-btn notif-wrapper" data-tippy-content="Notifications">
+            <button class="icon-btn" id="notif-toggle" aria-label="Notifications" aria-expanded="false" aria-haspopup="true">
+              <i class="fa-solid fa-bell" aria-hidden="true"></i>
+              {% if current_user.unread_notification_count > 0 %}
+              <span class="badge-dot" aria-label="{{ current_user.unread_notification_count }} unread notifications">
+                {{ current_user.unread_notification_count if current_user.unread_notification_count < 10 else '9+' }}
+              </span>
+              {% endif %}
+            </button>
+            <div class="notif-dropdown" id="notif-dropdown" role="menu" aria-label="Notifications" hidden>
+              <div class="notif-header">
+                <span>Notifications</span>
+                <a href="{{ url_for('dashboard.index') }}" class="notif-see-all">See all</a>
+              </div>
+              <div class="notif-list" id="notif-list">
+                <div class="notif-loading">
+                  <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <a href="{{ url_for('messages.inbox') }}" class="icon-btn" aria-label="Messages">
+            <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+            {% if current_user.unread_message_count > 0 %}
+            <span class="badge-dot" aria-label="{{ current_user.unread_message_count }} unread messages">
+              {{ current_user.unread_message_count if current_user.unread_message_count < 10 else '9+' }}
+            </span>
+            {% endif %}
+          </a>
+
+          <!-- User menu -->
+          <div class="user-menu-wrapper">
+            <button class="user-menu-trigger" id="user-menu-btn" aria-expanded="false" aria-haspopup="true" aria-controls="user-menu">
+              <span class="user-avatar" aria-hidden="true">
+                {% if current_user.avatar_url %}
+                  <img src="{{ current_user.avatar_url }}" alt="{{ current_user.name }}" loading="lazy" />
+                {% else %}
+                  <span class="avatar-initials">{{ current_user.name[0].upper() }}</span>
+                {% endif %}
+              </span>
+              <span class="user-name-label">{{ current_user.name.split()[0] }}</span>
+              <i class="fa-solid fa-chevron-down chevron-icon" aria-hidden="true"></i>
+            </button>
+
+            <div class="user-menu" id="user-menu" role="menu" hidden>
+              <div class="user-menu-header">
+                <strong>{{ current_user.name }}</strong>
+                <span class="role-badge role-badge--{{ current_user.role }}">{{ current_user.role }}</span>
+              </div>
+              <div class="user-menu-divider" role="separator"></div>
+              <a role="menuitem" href="{{ url_for('dashboard.index') }}" class="user-menu-item">
+                <i class="fa-solid fa-gauge" aria-hidden="true"></i> Dashboard
+              </a>
+              {% if current_user.is_seller %}
+              <a role="menuitem" href="{{ url_for('listings.new_listing') }}" class="user-menu-item">
+                <i class="fa-solid fa-circle-plus" aria-hidden="true"></i> New Listing
+              </a>
+              {% endif %}
+              <a role="menuitem" href="{{ url_for('messages.inbox') }}" class="user-menu-item">
+                <i class="fa-solid fa-inbox" aria-hidden="true"></i> Inbox
+                {% if current_user.unread_message_count > 0 %}
+                <span class="menu-badge">{{ current_user.unread_message_count }}</span>
+                {% endif %}
+              </a>
+              <a role="menuitem" href="{{ url_for('auth.edit_profile') }}" class="user-menu-item">
+                <i class="fa-solid fa-user-pen" aria-hidden="true"></i> Edit Profile
+              </a>
+              {% if current_user.is_admin %}
+              <div class="user-menu-divider" role="separator"></div>
+              <a role="menuitem" href="{{ url_for('admin.dashboard') }}" class="user-menu-item user-menu-item--admin">
+                <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Admin Panel
+              </a>
+              {% endif %}
+              <div class="user-menu-divider" role="separator"></div>
+              <a role="menuitem" href="{{ url_for('auth.logout') }}" class="user-menu-item user-menu-item--danger">
+                <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i> Sign Out
+              </a>
+            </div>
+          </div>
+
+        {% else %}
+
+          <a href="{{ url_for('auth.login') }}" class="btn-ghost">Sign In</a>
+          <a href="{{ url_for('auth.register') }}" class="btn-primary btn-sm">Get Started</a>
+
+        {% endif %}
+
+        <!-- Mobile hamburger -->
+        <button class="hamburger" id="mobile-menu-btn" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobile-menu">
+          <span class="ham-bar"></span>
+          <span class="ham-bar"></span>
+          <span class="ham-bar"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobile-menu" hidden>
+      <div class="mobile-search">
+        <form action="{{ url_for('main.browse') }}" method="get">
+          <div class="search-input-wrap">
+            <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input type="search" name="q" placeholder="Search cars…" class="search-input" aria-label="Search cars" />
+          </div>
+        </form>
+      </div>
+      <nav aria-label="Mobile navigation">
+        <a href="{{ url_for('main.browse') }}" class="mobile-nav-link">Browse Cars</a>
+        <a href="{{ url_for('main.archive') }}" class="mobile-nav-link">Archive</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('dashboard.index') }}" class="mobile-nav-link">Dashboard</a>
+          <a href="{{ url_for('messages.inbox') }}" class="mobile-nav-link">Messages</a>
+          {% if current_user.is_seller %}
+            <a href="{{ url_for('listings.new_listing') }}" class="mobile-nav-link mobile-nav-link--sell">Sell a Car</a>
+          {% endif %}
+          <a href="{{ url_for('auth.edit_profile') }}" class="mobile-nav-link">Profile</a>
+          {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}" class="mobile-nav-link mobile-nav-link--admin">Admin</a>
+          {% endif %}
+          <a href="{{ url_for('auth.logout') }}" class="mobile-nav-link mobile-nav-link--danger">Sign Out</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="mobile-nav-link">Sign In</a>
+          <a href="{{ url_for('auth.register') }}" class="mobile-nav-link mobile-nav-link--cta">Create Account</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════ FLASH MESSAGES ═══════════════════════════ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toast-stack" role="alert" aria-live="polite" aria-atomic="false">
+      {% for category, message in messages %}
+      <div class="toast toast--{{ category }}" data-toast>
+        <span class="toast-icon" aria-hidden="true">
+          {% if category == 'success' %}<i class="fa-solid fa-circle-check"></i>
+          {% elif category == 'danger' %}<i class="fa-solid fa-circle-xmark"></i>
+          {% elif category == 'warning' %}<i class="fa-solid fa-triangle-exclamation"></i>
+          {% else %}<i class="fa-solid fa-circle-info"></i>
+          {% endif %}
+        </span>
+        <span class="toast-msg">{{ message }}</span>
+        <button class="toast-close" aria-label="Dismiss notification" onclick="this.closest('[data-toast]').remove()">
+          <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ═══════════════════════════ MAIN CONTENT ═════════════════════════════ -->
+  <main id="main-content" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ═══════════════════════════ FOOTER ══════════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="{{ url_for('main.index') }}" class="footer-logo" aria-label="AutoVault home">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="32" height="32" rx="6" fill="#b91c1c"/>
+            <path d="M6 20L10 11H22L26 20" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <path d="M4 20H28V23C28 23.5523 27.5523 24 27 24H5C4.44772 24 4 23.5523 4 23V20Z" fill="white"/>
+            <circle cx="9" cy="22" r="2" fill="#b91c1c"/>
+            <circle cx="23" cy="22" r="2" fill="#b91c1c"/>
+          </svg>
+          <span>Auto<strong>Vault</strong></span>
+        </a>
+        <p class="footer-tagline">The smarter way to buy and sell vehicles.</p>
+        <div class="footer-social">
+          <a href="#" class="social-link" aria-label="AutoVault on Twitter"><i class="fa-brands fa-x-twitter" aria-hidden="true"></i></a>
+          <a href="#" class="social-link" aria-label="AutoVault on Instagram"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a>
+          <a href="#" class="social-link" aria-label="AutoVault on Facebook"><i class="fa-brands fa-facebook-f" aria-hidden="true"></i></a>
+          <a href="#" class="social-link" aria-label="AutoVault on LinkedIn"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i></a>
+        </div>
+      </div>
+
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <div class="footer-col">
+          <h3 class="footer-heading">Marketplace</h3>
+          <ul role="list">
+            <li><a href="{{ url_for('main.browse') }}">Browse All Cars</a></li>
+            <li><a href="{{ url_for('main.browse') }}?condition=New">New Cars</a></li>
+            <li><a href="{{ url_for('main.browse') }}?condition=Used">Used Cars</a></li>
+            <li><a href="{{ url_for('main.browse') }}?condition=Certified+Pre-Owned">Certified Pre-Owned</a></li>
+            <li><a href="{{ url_for('main.archive') }}">Archived Listings</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3 class="footer-heading">Browse by Type</h3>
+          <ul role="list">
+            <li><a href="{{ url_for('main.browse') }}?body_type=SUV">SUVs</a></li>
+            <li><a href="{{ url_for('main.browse') }}?body_type=Sedan">Sedans</a></li>
+            <li><a href="{{ url_for('main.browse') }}?body_type=Pickup+Truck">Trucks</a></li>
+            <li><a href="{{ url_for('main.browse') }}?fuel_type=Electric">Electric</a></li>
+            <li><a href="{{ url_for('main.browse') }}?body_type=Sports+Car">Sports Cars</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3 class="footer-heading">Account</h3>
+          <ul role="list">
+            {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('dashboard.index') }}">My Dashboard</a></li>
+            <li><a href="{{ url_for('messages.inbox') }}">Messages</a></li>
+            {% if current_user.is_seller %}
+            <li><a href="{{ url_for('listings.new_listing') }}">Post a Listing</a></li>
+            {% endif %}
+            <li><a href="{{ url_for('auth.edit_profile') }}">Edit Profile</a></li>
+            <li><a href="{{ url_for('auth.logout') }}">Sign Out</a></li>
+            {% else %}
+            <li><a href="{{ url_for('auth.login') }}">Sign In</a></li>
+            <li><a href="{{ url_for('auth.register') }}">Create Account</a></li>
+            {% endif %}
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3 class="footer-heading">AutoVault</h3>
+          <ul role="list">
+            <li><a href="#">About Us</a></li>
+            <li><a href="#">How It Works</a></li>
+            <li><a href="#">Seller Guide</a></li>
+            <li><a href="#">Buyer Protection</a></li>
+            <li><a href="#">Contact Support</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <p>&copy; {{ now.year if now is defined else '2025' }} AutoVault Inc. All rights reserved.</p>
+      <div class="footer-legal">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Cookie Settings</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════ AI ASSISTANT WIDGET ══════════════════════ -->
+  {% if current_user.is_authenticated %}
+  <div class="ai-widget" id="ai-widget" aria-label="AutoVault AI Assistant">
+    <button class="ai-toggle-btn" id="ai-toggle" aria-expanded="false" aria-controls="ai-panel" aria-label="Open AI Assistant">
+      <span class="ai-toggle-icon ai-toggle-icon--closed" aria-hidden="true">
+        <i class="fa-solid fa-robot"></i>
+        <span class="ai-label">AI Assistant</span>
+      </span>
+      <span class="ai-toggle-icon ai-toggle-icon--open" aria-hidden="true">
+        <i class="fa-solid fa-xmark"></i>
+      </span>
+    </button>
+
+    <div class="ai-panel" id="ai-panel" hidden role="dialog" aria-label="AI Assistant chat" aria-modal="false">
+      <div class="ai-panel-header">
+        <div class="ai-panel-title">
+          <i class="fa-solid fa-robot" aria-hidden="true"></i>
+          <div>
+            <strong>AutoVault AI</strong>
+            <span class="ai-status"><i class="fa-solid fa-circle ai-online-dot" aria-hidden="true"></i> Online</span>
+          </div>
+        </div>
+        <button class="ai-clear-btn" id="ai-clear" aria-label="Clear conversation">
+          <i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+        </button>
+      </div>
+
+      <div class="ai-messages" id="ai-messages" role="log" aria-live="polite" aria-label="Conversation">
+        <div class="ai-msg ai-msg--bot">
+          <div class="ai-msg-bubble">
+            Hi! I'm your AutoVault assistant. Ask me anything about buying or selling a car, financing, what to look for in a listing, or specific vehicles.
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-suggestions" id="ai-suggestions">
+        <button class="ai-chip" data-prompt="What should I look for when buying a used car?">Used car checklist</button>
+        <button class="ai-chip" data-prompt="How do I calculate my monthly car payment?">Payment calculator</button>
+        <button class="ai-chip" data-prompt="What documents do I need to sell my car?">Selling documents</button>
+      </div>
+
+      <div class="ai-input-row">
+        <textarea
+          class="ai-input"
+          id="ai-input"
+          placeholder="Ask anything about cars…"
+          rows="1"
+          aria-label="Message input"
+          maxlength="500"
+        ></textarea>
+        <button class="ai-send-btn" id="ai-send" aria-label="Send message">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ═══════════════════════════ COMPARE TRAY ════════════════════════════ -->
+  <div class="compare-tray" id="compare-tray" hidden aria-label="Car comparison tray" aria-live="polite">
+    <div class="compare-tray-inner">
+      <span class="compare-tray-label">
+        <i class="fa-solid fa-scale-balanced" aria-hidden="true"></i>
+        Comparing <strong id="compare-count">0</strong> cars
+      </span>
+      <div class="compare-tray-cars" id="compare-tray-cars"></div>
+      <div class="compare-tray-actions">
+        <a href="#" class="btn-primary btn-sm" id="compare-go-btn">Compare Now</a>
+        <button class="btn-ghost btn-sm" id="compare-clear-btn">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Core JS -->
+  <script src="{{ url_for('static', filename='js/search.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/favorites.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/ai_assistant.js') }}" defer></script>
+  {% block extra_js %}{% endblock %}
+
+  <script>
+    /* ── Navbar scroll shadow ── */
+    const header = document.getElementById('site-header');
+    let lastY = 0;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      header.classList.toggle('scrolled', y > 10);
+      header.classList.toggle('hidden', y > lastY + 5 && y > 80);
+      header.classList.toggle('visible', y < lastY - 5);
+      lastY = y;
+    }, { passive: true });
+
+    /* ── Mobile hamburger ── */
+    const mobileBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+    mobileBtn.addEventListener('click', () => {
+      const open = mobileBtn.getAttribute('aria-expanded') === 'true';
+      mobileBtn.setAttribute('aria-expanded', String(!open));
+      mobileMenu.hidden = open;
+      document.body.classList.toggle('menu-open', !open);
+    });
+
+    /* ── User dropdown ── */
+    const userBtn = document.getElementById('user-menu-btn');
+    const userMenu = document.getElementById('user-menu');
+    if (userBtn && userMenu) {
+      userBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = userBtn.getAttribute('aria-expanded') === 'true';
+        userBtn.setAttribute('aria-expanded', String(!open));
+        userMenu.hidden = open;
+      });
+    }
+
+    /* ── Notification dropdown ── */
+    const notifToggle = document.getElementById('notif-toggle');
+    const notifDropdown = document.getElementById('notif-dropdown');
+    if (notifToggle && notifDropdown) {
+      notifToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const open = notifToggle.getAttribute('aria-expanded') === 'true';
+        notifToggle.setAttribute('aria-expanded', String(!open));
+        notifDropdown.hidden = open;
+        if (!open) { loadNotifications(); }
+      });
+    }
+
+    /* ── Close all dropdowns on outside click ── */
+    document.addEventListener('click', (e) => {
+      if (userMenu && !userBtn.contains(e.target) && !userMenu.contains(e.target)) {
+        userMenu.hidden = true;
+        userBtn?.setAttribute('aria-expanded', 'false');
+      }
+      if (notifDropdown && !notifToggle.contains(e.target) && !notifDropdown.contains(e.target)) {
+        notifDropdown.hidden = true;
+        notifToggle?.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    /* ── Close dropdowns on Escape ── */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (userMenu) { userMenu.hidden = true; userBtn?.setAttribute('aria-expanded', 'false'); }
+        if (notifDropdown) { notifDropdown.hidden = true; notifToggle?.setAttribute('aria-expanded', 'false'); }
+        if (mobileMenu && !mobileMenu.hidden) {
+          mobileMenu.hidden = true;
+          mobileBtn.setAttribute('aria-expanded', 'false');
+          document.body.classList.remove('menu-open');
+        }
+      }
+    });
+
+    /* ── Auto-dismiss toasts after 5 s ── */
+    document.querySelectorAll('[data-toast]').forEach(toast => {
+      setTimeout(() => {
+        toast.classList.add('toast--out');
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+      }, 5000);
+    });
+
+    /* ── Notifications loader ── */
+    function loadNotifications() {
+      const list = document.getElementById('notif-list');
+      if (!list) return;
+      fetch('/api/notifications')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => {
+          if (!data.notifications || data.notifications.length === 0) {
+            list.innerHTML = '<p class="notif-empty">No notifications yet.</p>';
+            return;
+          }
+          list.innerHTML = data.notifications.map(n => `
+            <a href="${n.link || '#'}" class="notif-item ${n.is_read ? '' : 'notif-item--unread'}" role="menuitem">
+              <span class="notif-item-icon notif-type--${n.type}">
+                <i class="fa-solid ${n.type === 'new_message' ? 'fa-envelope' : n.type === 'listing_archived' ? 'fa-archive' : 'fa-heart'}" aria-hidden="true"></i>
+              </span>
+              <span class="notif-item-body">
+                <span class="notif-item-title">${escHtml(n.title)}</span>
+                ${n.body ? `<span class="notif-item-sub">${escHtml(n.body)}</span>` : ''}
+              </span>
+            </a>
+          `).join('');
+        })
+        .catch(() => {
+          list.innerHTML = '<p class="notif-empty">Could not load notifications.</p>';
+        });
+    }
+
+    /* ── Compare tray global manager ── */
+    const compareManager = (() => {
+      const KEY = 'av_compare';
+      let ids = JSON.parse(localStorage.getItem(KEY) || '[]');
+      const tray = document.getElementById('compare-tray');
+      const countEl = document.getElementById('compare-count');
+      const carsEl = document.getElementById('compare-tray-cars');
+      const goBtn = document.getElementById('compare-go-btn');
+      const clearBtn = document.getElementById('compare-clear-btn');
+
+      function save() { localStorage.setItem(KEY, JSON.stringify(ids)); }
+
+      function render() {
+        if (!tray) return;
+        if (ids.length === 0) { tray.hidden = true; return; }
+        tray.hidden = false;
+        countEl.textContent = ids.length;
+        if (goBtn) goBtn.href = '/compare?ids=' + ids.join('&ids=');
+        /* tray car chips are populated by listing cards, not here */
+      }
+
+      function toggle(id, title) {
+        const idx = ids.indexOf(id);
+        if (idx >= 0) {
+          ids.splice(idx, 1);
+        } else {
+          if (ids.length >= 3) { return false; }
+          ids.push(id);
+        }
+        save();
+        render();
+        return true;
+      }
+
+      function clear() { ids = []; save(); render(); }
+
+      if (clearBtn) clearBtn.addEventListener('click', clear);
+
+      render();
+      return { toggle, clear, ids: () => ids };
+    })();
+    window.compareManager = compareManager;
+
+    /* ── Tiny XSS helper ── */
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+</body>
+</html>
